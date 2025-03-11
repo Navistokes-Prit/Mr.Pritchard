@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Equations Solver</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .equation {
+            margin: 10px 0;
+            font-size: 1.2em;
+            color: #555;
+        }
+        input {
+            margin: 10px 5px;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 70px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button.submit {
+            background: #4CAF50;
+        }
+        button.show-answer {
+            background: #2196F3;
+        }
+        button.new-question {
+            background: #FF5722;
+        }
+        .feedback {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .feedback.correct {
+            color: #4CAF50;
+        }
+        .feedback.incorrect {
+            color: #F44336;
+        }
+        .feedback.answer {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Solve the System of Linear Equations</h1>
+    <div class="container">
+        <div id="equations"></div>
+        <div>
+            <label for="x-input">x: </label>
+            <input type="number" id="x-input" step="any">
+            <label for="y-input">y: </label>
+            <input type="number" id="y-input" step="any">
+        </div>
+        <button class="submit" onclick="checkAnswer()">Submit</button>
+        <button class="show-answer" onclick="showAnswer()">Show Answer</button>
+        <button class="new-question" onclick="generateSystem()">Generate New Question</button>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        // Adjustable range for coefficients
+        const coefficientRange = 20; // Change this to adjust the range (-20 to 20)
+
+        let a1, b1, c1, a2, b2, c2;
+        let correctX, correctY;
+
+        function generateRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateSystem() {
+            const type = Math.random() > 0.5 ? 'elimination' : 'substitution';
+
+            if (type === 'elimination') {
+                a1 = generateRandomInt(-coefficientRange, coefficientRange);
+                b1 = generateRandomInt(-coefficientRange, coefficientRange);
+                correctX = generateRandomInt(-coefficientRange / 2, coefficientRange / 2);
+                correctY = generateRandomInt(-coefficientRange / 2, coefficientRange / 2);
+                c1 = a1 * correctX + b1 * correctY;
+
+                a2 = generateRandomInt(-coefficientRange, coefficientRange);
+                b2 = generateRandomInt(-coefficientRange, coefficientRange);
+                c2 = a2 * correctX + b2 * correctY;
+            } else {
+                const slope = generateRandomInt(-coefficientRange / 4, coefficientRange / 4);
+                const intercept = generateRandomInt(-coefficientRange / 2, coefficientRange / 2);
+
+                correctX = generateRandomInt(-coefficientRange / 2, coefficientRange / 2);
+                correctY = slope * correctX + intercept;
+
+                a1 = slope;
+                b1 = intercept;
+
+                a2 = generateRandomInt(-coefficientRange, coefficientRange);
+                b2 = generateRandomInt(-coefficientRange, coefficientRange);
+                c2 = a2 * correctX + b2 * correctY;
+            }
+
+            document.getElementById('equations').innerHTML = type === 'elimination'
+                ? `
+                    <div class="equation">${a1}x + ${b1}y = ${c1}</div>
+                    <div class="equation">${a2}x + ${b2}y = ${c2}</div>
+                `
+                : `
+                    <div class="equation">y = ${a1}x + ${b1}</div>
+                    <div class="equation">${a2}x + ${b2}y = ${c2}</div>
+                `;
+
+            document.getElementById('feedback').textContent = ''; // Clear feedback
+            document.getElementById('x-input').value = ''; // Clear x input
+            document.getElementById('y-input').value = ''; // Clear y input
+        }
+
+        function checkAnswer() {
+            const userX = parseFloat(document.getElementById('x-input').value);
+            const userY = parseFloat(document.getElementById('y-input').value);
+
+            if (isNaN(userX) || isNaN(userY)) {
+                document.getElementById('feedback').textContent = 'Please enter valid numbers for x and y.';
+                return;
+            }
+
+            const isCorrect = Math.abs(userX - correctX) < 0.01 && Math.abs(userY - correctY) < 0.01;
+
+            if (isCorrect) {
+                document.getElementById('feedback').textContent = 'Correct! Well done!';
+                document.getElementById('feedback').className = 'feedback correct';
+            } else {
+                document.getElementById('feedback').textContent = 'Incorrect.';
+                document.getElementById('feedback').className = 'feedback incorrect';
+            }
+        }
+
+        function showAnswer() {
+            document.getElementById('feedback').textContent = `The correct solution is x = ${correctX.toFixed(2)}, y = ${correctY.toFixed(2)}.`;
+            document.getElementById('feedback').className = 'feedback answer';
+        }
+
+        // Generate a system on page load
+        generateSystem();
+    </script>
+</body>
+</html>

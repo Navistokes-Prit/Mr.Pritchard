@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Quiz with Whiteboard Tools</title>
+  
+  <!-- MathJax for LaTeX -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Global Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    #banner {
+      background-color: rgb(82, 172, 64);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 2em;
+      margin: 0;
+    }
+    /* Help Box */
+    #help-box {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.9em;
+      width: 300px;
+      z-index: 1000;
+      transition: height 0.3s ease, width 0.3s ease;
+    }
+    #help-box.minimized {
+      height: 40px;
+      overflow: hidden;
+      width: 150px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    #help-box-toggle {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      color: #007bff;
+    }
+    /* Quiz Section */
+    #quiz-section {
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .question-container {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .answer-box {
+      width: 70%;
+      padding: 10px;
+      margin-right: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .submit-button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .submit-button:hover {
+      background-color: #218838;
+    }
+    .feedback {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .correct {
+      color: green;
+    }
+    .incorrect {
+      color: red;
+    }
+    .answer-latex {
+      font-size: 1em;
+      margin-top: 5px;
+      color: #666;
+    }
+    #score-section {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    .score {
+      color: #007bff;
+      font-weight: bold;
+    }
+    .attempt-counter {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 5px;
+    }
+    /* Whiteboard & Toolbars */
+    .whiteboard-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 10px;
+    }
+    /* The canvases are positioned absolutely inside a relative container */
+    .canvas-container {
+      position: relative;
+      width: 600px;
+      height: 350px;
+      border: 2px solid black;
+      background-color: white;
+    }
+    /* Ensure the grid canvas does not capture pointer events */
+    .grid-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* The drawing canvas sits on top */
+    .drawing-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+    .tool-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .tool-button {
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+    }
+    .tool-button:hover {
+      background-color: #0056b3;
+    }
+    .eraser-button {
+      background-color: #dc3545;
+    }
+    .eraser-button:hover {
+      background-color: #c82333;
+    }
+    .clear-button {
+      background-color: gray;
+      margin-top: 10px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+    .clear-button:hover {
+      background-color: darkgray;
+    }
+    /* Grid selector styling */
+    .grid-selector {
+      margin-top: 10px;
+    }
+    .grid-selector label {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Help Box -->
+  <div id="help-box">
+    <button id="help-box-toggle">Minimize</button>
+    <h3>How to Type</h3>
+    <p><strong>Fractions:</strong> <code>\frac{numerator}{denominator}</code></p>
+    <p><strong>Exponents:</strong> <code>x^{2}</code> or <code>(xy)^{3}</code></p>
+    <p><strong>Square Roots:</strong> <code>\sqrt{radicand}</code></p>
+    <p><strong>NthRoots:</strong> <code>\sqrt[index]{radicand}</code></p>
+    <p><strong>Multiplication:</strong> <code>\cdot</code></p>
+    <p><strong>Repeating:</strong> <code>\overline{number}</code></p>
+  </div>
+
+  <!-- Banner -->
+  <div id="banner">
+    <h2>MATH 10</h2>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quiz-section">
+    <!-- Questions will be added dynamically here -->
+  </div>
+
+  <!-- Score Section -->
+  <div id="score-section">
+    <p>Correct Answers: <span class="score" id="correct-score">0</span>/<span id="total-questions">0</span></p>
+    <p>Percentage: <span class="score" id="percentage-score">0%</span></p>
+  </div>
+
+  <script>
+    const helpBox = document.getElementById('help-box');
+    const toggleButton = document.getElementById('help-box-toggle');
+
+    toggleButton.addEventListener('click', () => {
+      helpBox.classList.toggle('minimized');
+      toggleButton.textContent = helpBox.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+    });
+
+    const quizSection = document.getElementById('quiz-section');
+    const correctScoreElement = document.getElementById('correct-score');
+    const totalQuestionsElement = document.getElementById('total-questions');
+    const percentageScoreElement = document.getElementById('percentage-score');
+    let correctAnswers = 0;
+    let questionIndex = 0;
+    let questions = [];
+
+    // Debounce helper to reduce the frequency of MathJax rendering
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          func.apply(this, args);
+        }, delay);
+      };
+    }
+
+    // Function to draw grid lines on a given canvas
+    function drawGrid(canvasId, gridSize) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Clears the grid canvas
+    function clearGrid(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Create a new question with a whiteboard and toolbars (including grid toggle)
+    function createQuestion(questionText, correctAnswersList) {
+      let currentIndex = questionIndex++;
+      const container = document.createElement('div');
+      container.classList.add('question-container');
+      container.id = `question${currentIndex}`;
+
+      // Question content: text, answer input, submit button, feedback, etc.
+      const questionContent = document.createElement('div');
+      questionContent.classList.add('question-content');
+
+      const question = document.createElement('div');
+      question.classList.add('question');
+      question.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(question);
+
+      const inputBox = document.createElement('input');
+      inputBox.type = 'text';
+      inputBox.classList.add('answer-box');
+      inputBox.id = `answer-box-${currentIndex}`;
+      inputBox.placeholder = "Your answer";
+      questionContent.appendChild(inputBox);
+
+      const latexOutput = document.createElement('div');
+      latexOutput.classList.add('answer-latex');
+      latexOutput.id = `answer-latex-${currentIndex}`;
+      questionContent.appendChild(latexOutput);
+
+      const submitButton = document.createElement('button');
+      submitButton.classList.add('submit-button');
+      submitButton.textContent = "Submit";
+      submitButton.onclick = function () {
+        checkAnswer(currentIndex);
+      };
+      questionContent.appendChild(submitButton);
+
+      const feedback = document.createElement('div');
+      feedback.classList.add('feedback');
+      feedback.id = `feedback-${currentIndex}`;
+      questionContent.appendChild(feedback);
+
+      const attemptCounter = document.createElement('div');
+      attemptCounter.classList.add('attempt-counter');
+      attemptCounter.id = `attempt-counter-${currentIndex}`;
+      attemptCounter.textContent = `Attempts: 0`;
+      questionContent.appendChild(attemptCounter);
+
+      container.appendChild(questionContent);
+
+      // Whiteboard container with drawing canvas, grid canvas, toolbar, and grid toggle
+      const whiteboardContainer = document.createElement('div');
+      whiteboardContainer.classList.add('whiteboard-container');
+
+      // Create a relative container for the two canvases
+      const canvasContainer = document.createElement('div');
+      canvasContainer.classList.add('canvas-container');
+
+      // Create the grid canvas (background)
+      const gridCanvas = document.createElement('canvas');
+      gridCanvas.id = `grid-${currentIndex}`;
+      gridCanvas.width = 600;
+      gridCanvas.height = 350;
+      gridCanvas.classList.add('grid-canvas');
+      // No pointer events on the grid canvas
+      gridCanvas.style.pointerEvents = "none";
+
+      // Create the drawing canvas (foreground)
+      const drawingCanvas = document.createElement('canvas');
+      drawingCanvas.id = `whiteboard-${currentIndex}`;
+      drawingCanvas.width = 600;
+      drawingCanvas.height = 350;
+      drawingCanvas.classList.add('drawing-canvas');
+
+      // Append both canvases to the container (grid below drawing)
+      canvasContainer.appendChild(gridCanvas);
+      canvasContainer.appendChild(drawingCanvas);
+      whiteboardContainer.appendChild(canvasContainer);
+
+      // Toolbar for pencil colors and eraser tool
+      const toolbar = document.createElement('div');
+      toolbar.classList.add('tool-buttons');
+
+      // Pencil color buttons
+      const colors = ["black", "red", "blue", "green"];
+      colors.forEach(color => {
+        const colorButton = document.createElement('button');
+        colorButton.classList.add('tool-button');
+        colorButton.style.backgroundColor = color;
+        colorButton.title = color;
+        colorButton.addEventListener("click", () => {
+          // Switch to pencil tool and set selected color
+          drawingCanvas.dataset.tool = "pencil";
+          drawingCanvas.dataset.color = color;
+        });
+        toolbar.appendChild(colorButton);
+      });
+
+      // Eraser tool button
+      const eraserToolButton = document.createElement('button');
+      eraserToolButton.classList.add('tool-button', 'eraser-button');
+      eraserToolButton.textContent = "Eraser Tool";
+      eraserToolButton.addEventListener("click", () => {
+        drawingCanvas.dataset.tool = "eraser";
+      });
+      toolbar.appendChild(eraserToolButton);
+
+      whiteboardContainer.appendChild(toolbar);
+
+      // Clear Whiteboard button (clears only the drawing canvas)
+      const clearButton = document.createElement('button');
+      clearButton.textContent = "Clear Whiteboard";
+      clearButton.classList.add('clear-button');
+      clearButton.onclick = function () {
+        clearWhiteboard(`whiteboard-${currentIndex}`);
+      };
+      whiteboardContainer.appendChild(clearButton);
+
+      // Grid toggle selector
+      const gridSelector = document.createElement('div');
+      gridSelector.classList.add('grid-selector');
+      const gridLabel = document.createElement('label');
+      gridLabel.setAttribute("for", `grid-select-${currentIndex}`);
+      gridLabel.textContent = "Grid:";
+      gridSelector.appendChild(gridLabel);
+
+      const gridSelect = document.createElement('select');
+      gridSelect.id = `grid-select-${currentIndex}`;
+      const gridOptions = [
+         { value: "none", label: "No Grid" },
+         { value: "10", label: "Small Grid (10px)" },
+         { value: "20", label: "Medium Grid (20px)" },
+         { value: "50", label: "Large Grid (50px)" }
+      ];
+      gridOptions.forEach(opt => {
+         const optionElem = document.createElement('option');
+         optionElem.value = opt.value;
+         optionElem.textContent = opt.label;
+         gridSelect.appendChild(optionElem);
+      });
+      gridSelector.appendChild(gridSelect);
+      whiteboardContainer.appendChild(gridSelector);
+
+      container.appendChild(whiteboardContainer);
+      quizSection.appendChild(container);
+
+      // Set up drawing on the drawing canvas
+      setupWhiteboard(`whiteboard-${currentIndex}`);
+
+      // Update the LaTeX output as the user types
+      inputBox.addEventListener('input', debounce(function () {
+        const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
+        latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
+        MathJax.typeset();
+      }, 300));
+
+      inputBox.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          checkAnswer(currentIndex);
+        }
+      });
+
+      // When the grid selection changes, draw or clear the grid accordingly.
+      gridSelect.addEventListener('change', function() {
+         const value = gridSelect.value;
+         const gridCanvasId = `grid-${currentIndex}`;
+         if (value === "none") {
+            clearGrid(gridCanvasId);
+         } else {
+            drawGrid(gridCanvasId, parseInt(value));
+         }
+      });
+
+      questions.push({ answers: correctAnswersList, answered: false, attempts: 0 });
+      updateQuestionNumbers();
+    }
+
+    // Set up the drawing functionality on the whiteboard (drawing canvas)
+    function setupWhiteboard(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      let drawing = false;
+
+      // Set default tool and color
+      canvas.dataset.tool = "pencil";
+      canvas.dataset.color = "black";
+
+      function startDrawing(x, y) {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        if (canvas.dataset.tool === "eraser") {
+          ctx.strokeStyle = "white";  // Eraser draws in white
+          ctx.lineWidth = 10;         // Thicker line for erasing
+        } else {
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = 2;
+        }
+      }
+
+      function draw(x, y) {
+        if (!drawing) return;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+
+      function stopDrawing() {
+        drawing = false;
+      }
+
+      // Mouse events
+      canvas.addEventListener("mousedown", (e) => {
+        startDrawing(e.offsetX, e.offsetY);
+      });
+      canvas.addEventListener("mousemove", (e) => {
+        draw(e.offsetX, e.offsetY);
+      });
+      canvas.addEventListener("mouseup", stopDrawing);
+      canvas.addEventListener("mouseleave", stopDrawing);
+
+      // Touch events (for mobile devices)
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        startDrawing(touch.clientX - rect.left, touch.clientY - rect.top);
+      });
+      canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        draw(touch.clientX - rect.left, touch.clientY - rect.top);
+      });
+      canvas.addEventListener("touchend", stopDrawing);
+      canvas.addEventListener("touchcancel", stopDrawing);
+
+      ctx.lineCap = "round";
+    }
+
+    // Clear the drawing canvas (leaving the grid intact)
+    function clearWhiteboard(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Helper to remove extra spaces and commands from LaTeX strings
+    function stripLatex(latex) {
+      return latex.replace(/\s+/g, '').replace(/\\left|\\right/g, '');
+    }
+
+    // Check the user's answer for a question
+    function checkAnswer(questionIndex) {
+      const inputBox = document.getElementById(`answer-box-${questionIndex}`);
+      const feedbackElement = document.getElementById(`feedback-${questionIndex}`);
+      const attemptCounter = document.getElementById(`attempt-counter-${questionIndex}`);
+      const studentAnswer = stripLatex(inputBox.value.trim());
+      const possibleAnswers = questions[questionIndex].answers.map(answer => stripLatex(answer.toString().trim()));
+
+      if (!questions[questionIndex].answered) {
+        questions[questionIndex].attempts += 1;
+        attemptCounter.textContent = `Attempts: ${questions[questionIndex].attempts}`;
+
+        if (possibleAnswers.includes(studentAnswer)) {
+          feedbackElement.textContent = "Correct!";
+          feedbackElement.className = "feedback correct";
+          questions[questionIndex].answered = true;
+          correctAnswers++;
+        } else if (questions[questionIndex].attempts >= 3) {
+          const firstCorrectAnswer = questions[questionIndex].answers;
+          feedbackElement.innerHTML = `Incorrect. The correct answer is: $$${firstCorrectAnswer}$$`;
+          feedbackElement.className = "feedback incorrect";
+          MathJax.typeset();
+          questions[questionIndex].answered = true;
+        } else {
+          feedbackElement.textContent = "Incorrect, try again.";
+          feedbackElement.className = "feedback incorrect";
+        }
+      }
+      updateScore();
+    }
+
+    // Update the score display
+    function updateScore() {
+      correctScoreElement.textContent = correctAnswers;
+      totalQuestionsElement.textContent = questions.length;
+      const percentage = ((correctAnswers / questions.length) * 100).toFixed(2);
+      percentageScoreElement.textContent = `${percentage}%`;
+    }
+
+    function updateQuestionNumbers() {
+      totalQuestionsElement.textContent = questions.length;
+    }
+
+    // Sample questions
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/kvN7LkS.png' alt='Geometric Figure 1' style='max-width:100%; height:auto;'>",
+    ["17.1"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/tcCM3fF.png' alt='Geometric Figure 2' style='max-width:100%; height:auto;'>",
+    ["12.9"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/a2K9n8N.png' alt='Geometric Figure 3' style='max-width:100%; height:auto;'>",
+    ["13.3"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/GwY1YWi.png' alt='Geometric Figure 4' style='max-width:100%; height:auto;'>",
+    ["4.7"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/AWRy1Sa.png' alt='Geometric Figure 5' style='max-width:100%; height:auto;'>",
+    ["23.2"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/0tQjP1h.png' alt='Geometric Figure 6' style='max-width:100%; height:auto;'>",
+    ["48.2"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/4GB12nu.png' alt='Geometric Figure 7' style='max-width:100%; height:auto;'>",
+    ["50.0"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/WvolT7K.png' alt='Geometric Figure 8' style='max-width:100%; height:auto;'>",
+    ["28.8"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/2RvWhCR.png' alt='Geometric Figure 9' style='max-width:100%; height:auto;'>",
+    ["36.9"]
+);
+
+createQuestion(
+    "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/VXPv97D.png' alt='Geometric Figure 10' style='max-width:100%; height:auto;'>",
+    ["66.4"]
+);
+
+
+
+
+
+    window.onload = function () {
+      MathJax.typeset();
+    };
+  </script>
+</body>
+</html>

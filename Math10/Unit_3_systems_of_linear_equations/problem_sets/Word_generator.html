@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Problem Practice</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .problem {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .inputs {
+            margin: 10px 0;
+        }
+        input {
+            margin: 10px 5px;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 120px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button.submit {
+            background: #4CAF50;
+        }
+        button.show-answer {
+            background: #2196F3;
+        }
+        button.new-problem {
+            background: #FF5722;
+        }
+        .feedback {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .feedback.correct {
+            color: #4CAF50;
+        }
+        .feedback.incorrect {
+            color: #F44336;
+        }
+        .feedback.answer {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Problem Practice</h1>
+    <!-- Containers for Each Problem Type -->
+    <div id="problem-types">
+        <div class="container" id="mixture-container">
+            <h2>Mixture Problem</h2>
+            <div class="problem" id="mixture-problem"></div>
+            <div class="inputs">
+                <input type="text" id="mixture-answer1" placeholder="Answer 1">
+                <input type="text" id="mixture-answer2" placeholder="Answer 2">
+            </div>
+            <button class="submit" onclick="checkAnswer('mixture')">Check Answer</button>
+            <button class="show-answer" onclick="showAnswer('mixture')">Show Answer</button>
+            <button class="new-problem" onclick="generateProblem('mixture')">Generate New Problem</button>
+            <div class="feedback" id="mixture-feedback"></div>
+        </div>
+
+        <div class="container" id="finance-container">
+            <h2>Finance Problem</h2>
+            <div class="problem" id="finance-problem"></div>
+            <div class="inputs">
+                <input type="text" id="finance-answer1" placeholder="Answer 1">
+                <input type="text" id="finance-answer2" placeholder="Answer 2">
+            </div>
+            <button class="submit" onclick="checkAnswer('finance')">Check Answer</button>
+            <button class="show-answer" onclick="showAnswer('finance')">Show Answer</button>
+            <button class="new-problem" onclick="generateProblem('finance')">Generate New Problem</button>
+            <div class="feedback" id="finance-feedback"></div>
+        </div>
+
+        <div class="container" id="motion-container">
+            <h2>Motion Problem</h2>
+            <div class="problem" id="motion-problem"></div>
+            <div class="inputs">
+                <input type="text" id="motion-answer1" placeholder="Answer 1">
+                <input type="text" id="motion-answer2" placeholder="Answer 2">
+            </div>
+            <button class="submit" onclick="checkAnswer('motion')">Check Answer</button>
+            <button class="show-answer" onclick="showAnswer('motion')">Show Answer</button>
+            <button class="new-problem" onclick="generateProblem('motion')">Generate New Problem</button>
+            <div class="feedback" id="motion-feedback"></div>
+        </div>
+
+        <div class="container" id="plane-container">
+            <h2>Plane Problem</h2>
+            <div class="problem" id="plane-problem"></div>
+            <div class="inputs">
+                <input type="text" id="plane-answer1" placeholder="Answer 1">
+                <input type="text" id="plane-answer2" placeholder="Answer 2">
+            </div>
+            <button class="submit" onclick="checkAnswer('plane')">Check Answer</button>
+            <button class="show-answer" onclick="showAnswer('plane')">Show Answer</button>
+            <button class="new-problem" onclick="generateProblem('plane')">Generate New Problem</button>
+            <div class="feedback" id="plane-feedback"></div>
+        </div>
+    </div>
+
+    <script>
+        const answers = {};
+
+        function generateRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateProblem(type) {
+            let problemText = '';
+            let answer1 = 0;
+            let answer2 = 0;
+
+            if (type === 'mixture') {
+                answer1 = generateRandomInt(1, 20);
+                answer2 = generateRandomInt(1, 20);
+                const totalLiters = answer1 + answer2;
+                const highConcentration = generateRandomInt(41, 80);
+                const lowConcentration = generateRandomInt(10, 40);
+                const targetConcentration = ((highConcentration * answer1) + (lowConcentration * answer2)) / totalLiters;
+
+                problemText = `A chemist needs ${totalLiters} liters of a ${targetConcentration.toFixed(1)}% alcohol solution. She has a ${highConcentration}% solution and a ${lowConcentration}% solution. How much of each should she mix?`;
+            } else if (type === 'finance') {
+                answer1 = generateRandomInt(100, 10000);
+                answer2 = generateRandomInt(100, 10000);
+                const totalInvestment = answer1 + answer2;
+                const rate1 = generateRandomInt(3, 20);
+                const rate2 = generateRandomInt(1, 20);
+                const totalInterest = (answer1 * rate1 + answer2 * rate2) / 100;
+
+                problemText = `An investor invested $${totalInvestment} into two funds. One fund pays ${rate1}% interest per year, while the other pays ${rate2}% per year. They earned $${totalInterest.toFixed(2)} in interest. How much did the investor invest in each fund?`;
+            } else if (type === 'motion') {
+                answer1 = generateRandomInt(2, 10); // Time at first speed
+                answer2 = generateRandomInt(2, 10); // Time at second speed
+                const speed1 = generateRandomInt(10, 100);
+                const speed2 = generateRandomInt(10, 100);
+		const totaltime = (answer1 + answer2);
+                const totalDistance = (speed1 * answer1) + (speed2 * answer2);
+
+                problemText = `A vehicle travels a total of ${totalDistance} km in ${totaltime} hours. Part of the trip was at ${speed1} km/h, and the remainder was at ${speed2} km/h. How long did the vehicle travel at each speed?`;
+            } else if (type === 'plane') {
+                answer1 = generateRandomInt(400, 1000); // Plane speed
+                answer2 = generateRandomInt(20, 100); // Wind speed
+                const distance = generateRandomInt(500, 5000);
+                const timeWithWind = distance / (answer1 + answer2);
+                const timeAgainstWind = distance / (answer1 - answer2);
+
+                problemText = `A plane traveled ${distance} miles with a tailwind in ${timeWithWind.toFixed(2)} hours and returned against the wind in ${timeAgainstWind.toFixed(2)} hours. What is the speed of the plane in still air? What is the speed of the wind?`;
+            }
+
+            // Store the answers
+            answers[type] = [answer1, answer2];
+
+            // Update the UI
+            document.getElementById(`${type}-problem`).textContent = problemText;
+            document.getElementById(`${type}-feedback`).textContent = '';
+            document.getElementById(`${type}-answer1`).value = '';
+            document.getElementById(`${type}-answer2`).value = '';
+        }
+
+        function checkAnswer(type) {
+            const userAnswer1 = parseInt(document.getElementById(`${type}-answer1`).value);
+            const userAnswer2 = parseInt(document.getElementById(`${type}-answer2`).value);
+
+            if (isNaN(userAnswer1) || isNaN(userAnswer2)) {
+                document.getElementById(`${type}-feedback`).textContent = 'Please enter valid integers for both answers.';
+                document.getElementById(`${type}-feedback`).className = 'feedback incorrect';
+                return;
+            }
+
+            const correctAnswers = answers[type];
+            const isCorrect =
+                (userAnswer1 === correctAnswers[0] && userAnswer2 === correctAnswers[1]) ||
+                (userAnswer1 === correctAnswers[1] && userAnswer2 === correctAnswers[0]);
+
+            if (isCorrect) {
+                document.getElementById(`${type}-feedback`).textContent = 'Correct! Well done!';
+                document.getElementById(`${type}-feedback`).className = 'feedback correct';
+            } else {
+                document.getElementById(`${type}-feedback`).textContent = 'Incorrect. Try again!';
+                document.getElementById(`${type}-feedback`).className = 'feedback incorrect';
+            }
+        }
+
+        function showAnswer(type) {
+            const correctAnswers = answers[type];
+            document.getElementById(`${type}-feedback`).textContent = `Correct answers: ${correctAnswers[0]}, ${correctAnswers[1]}`;
+            document.getElementById(`${type}-feedback`).className = 'feedback answer';
+        }
+
+        // Generate initial problems
+        ['mixture', 'finance', 'motion', 'plane'].forEach(type => generateProblem(type));
+    </script>
+</body>
+</html>

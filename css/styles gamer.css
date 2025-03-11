@@ -1,0 +1,230 @@
+/* ===========================================
+   Reset and Global Styles
+   =========================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: grey; /* Dark background */
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+/* ===========================================
+   CSS Variables for Gamer Theme
+   =========================================== */
+:root {
+  --primary-color: #f94747; /* Neon cyan */
+  --secondary-color: #9d9999; /* Neon pink */
+  --accent-color: Grey; /* Bold orange */
+  --bg-dark: #121212;
+  --bg-light: #1e1e1e;
+}
+
+/* ===========================================
+   Hero Section with Animated Gradient
+   =========================================== */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  color: #fff;
+  text-align: center;
+  padding: 120px 20px;
+  overflow: hidden;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.hero-content h1 {
+  font-size: 3.5em;
+  text-shadow: 0 0 10px var(--primary-color);
+  margin-bottom: 20px;
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero-content p {
+  font-size: 1.4em;
+  text-shadow: 0 0 8px var(--secondary-color);
+  max-width: 800px;
+  margin: 0 auto 30px;
+  animation: fadeInUp 1.2s ease-out;
+}
+
+/* Call-to-Action Button (if needed on other pages) */
+.cta-button {
+  display: inline-block;
+  padding: 15px 30px;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: background 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 0 15px var(--accent-color);
+  animation: pulse 2s infinite;
+}
+
+.cta-button:hover {
+  background: #e68a00;
+  transform: scale(1.05);
+}
+
+/* ===========================================
+   Keyframe Animations
+   =========================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 15px var(--accent-color);
+  }
+  50% {
+    box-shadow: 0 0 30px var(--accent-color);
+  }
+  100% {
+    box-shadow: 0 0 15px var(--accent-color);
+  }
+}
+
+/* ===========================================
+   Main Content Container
+   =========================================== */
+.container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+/* ===========================================
+   Units Grid for Cards
+   =========================================== */
+.units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* ===========================================
+   Unit Card Styles (Gamer Inspired)
+   =========================================== */
+.unit {
+  background: var(--bg-light);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+  transition: transform 0.2s, border 0.3s ease, box-shadow 0.3s;
+  overflow: hidden;
+  position: relative;
+}
+
+.unit:hover {
+  transform: translateY(-5px);
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 6px 12px rgba(0,255,255,0.5);
+}
+
+/* ===========================================
+   Unit Button Styles
+   =========================================== */
+.unit-button {
+  display: block;
+  padding: 20px;
+  text-align: center;
+  background: var(--primary-color);
+  color: #121212;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 10px 10px 0 0;
+  transition: background 0.3s ease, transform 0.3s ease;
+  position: relative;
+}
+
+.unit-button::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--secondary-color);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.unit-button:hover {
+  background: var(--secondary-color);
+  transform: translateY(-3px);
+}
+
+.unit-button:hover::after {
+  transform: scaleX(1);
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column; /* This stacks the items vertically */
+  gap: 1rem; /* Optional: adds spacing between items */
+}
+
+/* ===========================================
+   Unit Description Styles
+   =========================================== */
+.unit-description {
+  padding: 20px;
+  text-align: center;
+  font-size: 1em;
+  background: var(--bg-dark);
+  color: #e0e0e0;
+}
+
+/* ===========================================
+   Footer Styles
+   =========================================== */
+footer {
+  background: #1e1e1e;
+  color: #e0e0e0;
+  text-align: center;
+  padding: 20px;
+  font-size: 0.9em;
+  margin-top: 40px;
+}
+
+/* ===========================================
+   Responsive Adjustments
+   =========================================== */
+@media (max-width: 600px) {
+  .hero-content h1 {
+    font-size: 2.8em;
+  }
+  
+  .hero-content p {
+    font-size: 1.2em;
+  }
+}

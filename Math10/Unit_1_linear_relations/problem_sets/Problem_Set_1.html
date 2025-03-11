@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz</title>
+    
+    <!-- MathJax for LaTeX -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        #banner {
+            background-color: #0d4179;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin: 0;
+        }
+
+        #help-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
+            width: 250px;
+        }
+
+        #quiz-section {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .question-container {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .answer-box {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+
+        .feedback {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .correct {
+            color: green;
+        }
+
+        .incorrect {
+            color: red;
+        }
+
+        .answer-latex {
+            font-size: 1em;
+            margin-top: 5px;
+            color: #666;
+        }
+
+        #score-section {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .score {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .attempt-counter {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Help Box -->
+    <div id="help-box">
+        <h3>How to Type</h3>
+        <p><strong>Fractions:</strong> <code>\frac{numerator}{denominator}</code></p>
+        <p><strong>Exponents:</strong> <code>x^{2}</code> or <code>(xy)^{3}</code></p>
+        <p><strong>Roots:</strong> <code>\sqrt{expression}</code></p>
+    </div>
+
+    <!-- Banner with Title -->
+    <div id="banner">
+        <h2>MATH 10 DAILY WORK</h2>
+    </div>
+
+    <!-- Quiz Section -->
+    <div id="quiz-section">
+        <!-- Questions will be added dynamically here -->
+    </div>
+
+    <!-- Score Section -->
+    <div id="score-section">
+        <p>Correct Answers: <span class="score" id="correct-score">0</span>/<span id="total-questions">0</span></p>
+        <p>Percentage: <span class="score" id="percentage-score">0%</span></p>
+    </div>
+
+    <script>
+        const quizSection = document.getElementById('quiz-section');
+        const correctScoreElement = document.getElementById('correct-score');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const percentageScoreElement = document.getElementById('percentage-score');
+        let correctAnswers = 0;
+        let questionIndex = 0;
+        let questions = [];
+
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
+        function createQuestion(questionText, latexExpression, correctAnswers) {
+            let currentIndex = questionIndex++;
+            const container = document.createElement('div');
+            container.classList.add('question-container');
+            container.id = `question${currentIndex}`;
+
+            const question = document.createElement('div');
+            question.classList.add('question');
+            question.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText} $$${latexExpression}$$`;
+            container.appendChild(question);
+
+            const inputBox = document.createElement('input');
+            inputBox.type = 'text';
+            inputBox.classList.add('answer-box');
+            inputBox.id = `answer-box-${currentIndex}`;
+            inputBox.placeholder = "Your answer";
+            container.appendChild(inputBox);
+
+            const latexOutput = document.createElement('div');
+            latexOutput.classList.add('answer-latex');
+            latexOutput.id = `answer-latex-${currentIndex}`;
+            container.appendChild(latexOutput);
+
+            const submitButton = document.createElement('button');
+            submitButton.classList.add('submit-button');
+            submitButton.textContent = "Submit";
+            submitButton.onclick = function () {
+                checkAnswer(currentIndex);
+            };
+            container.appendChild(submitButton);
+
+            const feedback = document.createElement('div');
+            feedback.classList.add('feedback');
+            feedback.id = `feedback-${currentIndex}`;
+            container.appendChild(feedback);
+
+            const attemptCounter = document.createElement('div');
+            attemptCounter.classList.add('attempt-counter');
+            attemptCounter.id = `attempt-counter-${currentIndex}`;
+            attemptCounter.textContent = `Attempts: 0`;
+            container.appendChild(attemptCounter);
+
+            quizSection.appendChild(container);
+
+            inputBox.addEventListener('input', debounce(function () {
+                const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
+                latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
+                MathJax.typeset();
+            }, 300));
+
+            questions.push({ answers: correctAnswers, answered: false, attempts: 0 });
+            updateQuestionNumbers();
+        }
+
+        function stripLatex(latex) {
+            return latex.replace(/\s+/g, '').replace(/\\left|\\right/g, '');
+        }
+
+        function checkAnswer(questionIndex) {
+            const inputBox = document.getElementById(`answer-box-${questionIndex}`);
+            const feedbackElement = document.getElementById(`feedback-${questionIndex}`);
+            const attemptCounter = document.getElementById(`attempt-counter-${questionIndex}`);
+            const studentAnswer = stripLatex(inputBox.value.trim());
+            const possibleAnswers = questions[questionIndex].answers.map(answer => stripLatex(answer.toString().trim()));
+
+            if (!questions[questionIndex].answered) {
+                questions[questionIndex].attempts += 1;
+                attemptCounter.textContent = `Attempts: ${questions[questionIndex].attempts}`;
+
+                if (possibleAnswers.includes(studentAnswer)) {
+                    feedbackElement.textContent = "Correct!";
+                    feedbackElement.className = "feedback correct";
+                    questions[questionIndex].answered = true;
+                    correctAnswers++;
+                } else {
+                    feedbackElement.textContent = "Incorrect, try again.";
+                    feedbackElement.className = "feedback incorrect";
+                }
+            } else {
+                feedbackElement.textContent = "This question has already been answered correctly.";
+            }
+            updateScore();
+        }
+
+        function updateScore() {
+            correctScoreElement.textContent = correctAnswers;
+            totalQuestionsElement.textContent = questions.length;
+            const percentage = ((correctAnswers / questions.length) * 100).toFixed(2);
+            percentageScoreElement.textContent = `${percentage}%`;
+        }
+
+        function updateQuestionNumbers() {
+            totalQuestionsElement.textContent = questions.length;
+        }
+
+        // Adding sample questions with multiple possible correct answers
+
+        createQuestion("Find the slope of a line that is perpendicular to a line with slope 2:", "", ["-1/2","\\frac{-1}{2}","-\\frac{1}{2}"]);
+
+createQuestion("What type of line has an undefined slope?", " ", ["vertical", "vertical line"]);
+
+createQuestion("Find the slope of a line passing through the points (6, -2) and (3, 7):", " ", ["-3", "-3/1","\\frac{-3}{1}"]);
+
+createQuestion("Which form of a line equation makes it easiest to identify the slope directly?", " ", ["Slope-Intercept Form", "slope intercept form", "slope intercept","slope-intercept"]);
+
+createQuestion("If two lines are perpendicular, and the slope of one is -3, what is the slope of the other?", " ", ["1/3", "\\frac{1}{3}"]);
+
+createQuestion("The equation of a line in slope-intercept form is given. What is the x-intercept?", "y = 5x + 3", ["(-3/5,0)", "(\\frac{-3}{5},0)","(-\\frac{3}{5},0)"]);
+
+createQuestion("If a line passes through the origin and has a slope of -1/4, what is the equation of the line?", " ", ["y = -1/4x", "y = -\\frac{1}{4}x", "y = \\frac{-1}{4}x", "y = \\frac{-x}{4}"]);
+
+createQuestion("if 3x-2y+6=0, and y=px+5 are parallel, then the value of p is?", " ", ["3/2","\\frac{3}{2}"]);
+
+createQuestion("Write the equation of the line with the given information in GENERAL form", "A(3,7), B(12,-4) ", ["11x+9y-96=0"]);
+
+createQuestion("A line has a y-intercept of 7 and passes through (3, 2). What is the slope of the line?", "", ["-5/3", "-\\frac{5}{3}","\\frac{-5}{3}"]);
+
+createQuestion("If two lines have slopes of 2 and -1/2, what is their relationship?", "", ["perpendicular", "perpendicular lines"]);
+
+createQuestion("Find the x-intercept of a line with the equation ", "2y = 3x - 12", ["(4,0)"]);
+
+createQuestion("Write the equation of a line in slope-intercept form that is perpendicular to the line given, and goes through A(3,12)", "-5x-3y=12", ["y=\\frac{3}{5}x+\\frac{51}{5}"]);
+
+createQuestion("Determine the y-intercept of a line that is parallel to the line given  and passes through (6, 2):", "y = \\frac{1}{3}x - 4 ", ["(0,0)"]);
+
+        // Add more questions as needed...
+
+        window.onload = function () {
+            MathJax.typeset();
+        };
+    </script>
+</body>
+</html>
