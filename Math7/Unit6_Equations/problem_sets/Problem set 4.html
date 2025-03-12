@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Quiz with Whiteboard Tools</title>
+  
+  <!-- MathJax for LaTeX -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="../../../css/math7problemset.css" />
+  
+</head>
+<body>
+  <!-- Help Box -->
+  <div id="help-box">
+    <button id="help-box-toggle">Minimize</button>
+    <h3>How to Type</h3>
+    <p><strong>Fractions:</strong> <code>\frac{numerator}{denominator}</code></p>
+    <p><strong>Exponents:</strong> <code>x^{2}</code> or <code>(xy)^{3}</code></p>
+    <p><strong>Square Roots:</strong> <code>\sqrt{radicand}</code></p>
+    <p><strong>NthRoots:</strong> <code>\sqrt[index]{radicand}</code></p>
+    <p><strong>Multiplication:</strong> <code>\cdot</code></p>
+    <p><strong>Repeating:</strong> <code>\overline{number}</code></p>
+  </div>
+
+  <!-- Banner -->
+  <div id="banner">
+    <h2>MATH 7</h2>
+    <a class="cta-button" href="../Unit6_equations.html">Back</a>
+
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quiz-section">
+    <!-- Questions will be added dynamically here -->
+  </div>
+
+  <!-- Score Section -->
+  <div id="score-section">
+    <p>Correct Answers: <span class="score" id="correct-score">0</span>/<span id="total-questions">0</span></p>
+    <p>Percentage: <span class="score" id="percentage-score">0%</span></p>
+  </div>
+
+  <script>
+    const helpBox = document.getElementById('help-box');
+    const toggleButton = document.getElementById('help-box-toggle');
+    toggleButton.addEventListener('click', () => {
+      helpBox.classList.toggle('minimized');
+      toggleButton.textContent = helpBox.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+    });
+
+    const quizSection = document.getElementById('quiz-section');
+    const correctScoreElement = document.getElementById('correct-score');
+    const totalQuestionsElement = document.getElementById('total-questions');
+    const percentageScoreElement = document.getElementById('percentage-score');
+    let correctAnswers = 0;
+    let questionIndex = 0;
+    let questions = [];
+
+    // Debounce helper to reduce MathJax rendering frequency
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => { func.apply(this, args); }, delay);
+      };
+    }
+
+    // Draw grid lines over the entire canvas (900x600)
+    function drawGrid(canvasId, gridSize) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function clearGrid(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function undoAction(canvas) {
+      if (!canvas.undoStack || canvas.undoStack.length === 0) return;
+      canvas.undoStack.pop();
+      const ctx = canvas.getContext("2d");
+      if (canvas.undoStack.length > 0) {
+        const previousState = canvas.undoStack[canvas.undoStack.length - 1];
+        ctx.putImageData(previousState, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // Create a new question with a whiteboard that includes a preview layer for the eraser
+    function createQuestion(questionText, correctAnswersList) {
+      let currentIndex = questionIndex++;
+      const container = document.createElement('div');
+      container.classList.add('question-container');
+      container.id = `question${currentIndex}`;
+
+      // Question content (text, input, submit, etc.)
+      const questionContent = document.createElement('div');
+      questionContent.classList.add('question-content');
+
+      const question = document.createElement('div');
+      question.classList.add('question');
+      question.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(question);
+
+      const inputBox = document.createElement('input');
+      inputBox.type = 'text';
+      inputBox.classList.add('answer-box');
+      inputBox.id = `answer-box-${currentIndex}`;
+      inputBox.placeholder = "Your answer";
+      questionContent.appendChild(inputBox);
+
+      const latexOutput = document.createElement('div');
+      latexOutput.classList.add('answer-latex');
+      latexOutput.id = `answer-latex-${currentIndex}`;
+      questionContent.appendChild(latexOutput);
+
+      const submitButton = document.createElement('button');
+      submitButton.classList.add('submit-button');
+      submitButton.textContent = "Submit";
+      submitButton.onclick = function () { checkAnswer(currentIndex); };
+      questionContent.appendChild(submitButton);
+
+      const feedback = document.createElement('div');
+      feedback.classList.add('feedback');
+      feedback.id = `feedback-${currentIndex}`;
+      questionContent.appendChild(feedback);
+
+      const attemptCounter = document.createElement('div');
+      attemptCounter.classList.add('attempt-counter');
+      attemptCounter.id = `attempt-counter-${currentIndex}`;
+      attemptCounter.textContent = `Attempts: 0`;
+      questionContent.appendChild(attemptCounter);
+
+      container.appendChild(questionContent);
+
+      // Whiteboard container with layered canvases: grid, drawing, and preview (for eraser)
+      const whiteboardContainer = document.createElement('div');
+      whiteboardContainer.classList.add('whiteboard-container');
+      const canvasContainer = document.createElement('div');
+      canvasContainer.classList.add('canvas-container');
+
+      // Grid canvas fills the whole whiteboard (900x600)
+      const gridCanvas = document.createElement('canvas');
+      gridCanvas.id = `grid-${currentIndex}`;
+      gridCanvas.width = 900;
+      gridCanvas.height = 600;
+      gridCanvas.classList.add('grid-canvas');
+      gridCanvas.style.pointerEvents = "none";
+      canvasContainer.appendChild(gridCanvas);
+
+      // Drawing canvas
+      const drawingCanvas = document.createElement('canvas');
+      drawingCanvas.id = `whiteboard-${currentIndex}`;
+      drawingCanvas.width = 900;
+      drawingCanvas.height = 600;
+      drawingCanvas.classList.add('drawing-canvas');
+      drawingCanvas.undoStack = [];
+      canvasContainer.appendChild(drawingCanvas);
+
+      // Preview canvas for eraser (on top)
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.id = `preview-${currentIndex}`;
+      previewCanvas.width = 900;
+      previewCanvas.height = 600;
+      previewCanvas.classList.add('preview-canvas');
+      previewCanvas.style.pointerEvents = "none";
+      canvasContainer.appendChild(previewCanvas);
+
+      whiteboardContainer.appendChild(canvasContainer);
+
+      // Toolbar
+      const toolbar = document.createElement('div');
+      toolbar.classList.add('tool-buttons');
+
+      const colors = ["black", "red", "blue", "green"];
+      colors.forEach(color => {
+        const colorButton = document.createElement('button');
+        colorButton.classList.add('tool-button');
+        colorButton.style.backgroundColor = color;
+        colorButton.title = color;
+        colorButton.addEventListener("click", () => {
+          drawingCanvas.dataset.tool = "pencil";
+          drawingCanvas.dataset.color = color;
+        });
+        toolbar.appendChild(colorButton);
+      });
+
+      const eraserToolButton = document.createElement('button');
+      eraserToolButton.classList.add('tool-button', 'eraser-button');
+      eraserToolButton.textContent = "Eraser Tool";
+      eraserToolButton.addEventListener("click", () => {
+        drawingCanvas.dataset.tool = "eraser";
+      });
+      toolbar.appendChild(eraserToolButton);
+
+      const lineToolButton = document.createElement('button');
+      lineToolButton.classList.add('tool-button');
+      lineToolButton.textContent = "Line Tool";
+      lineToolButton.addEventListener("click", () => {
+        drawingCanvas.dataset.tool = "line";
+      });
+      toolbar.appendChild(lineToolButton);
+
+      const pencilSizeLabel = document.createElement('label');
+      pencilSizeLabel.setAttribute("for", `pencil-size-${currentIndex}`);
+      pencilSizeLabel.textContent = "Pencil Size:";
+      toolbar.appendChild(pencilSizeLabel);
+
+      const pencilSizeSlider = document.createElement('input');
+      pencilSizeSlider.type = 'range';
+      pencilSizeSlider.id = `pencil-size-${currentIndex}`;
+      pencilSizeSlider.min = "1";
+      pencilSizeSlider.max = "10";
+      pencilSizeSlider.value = "2";  // Default thickness
+      pencilSizeSlider.style.marginLeft = "5px";
+      pencilSizeSlider.addEventListener('input', () => {
+        drawingCanvas.dataset.pencilSize = pencilSizeSlider.value;
+      });
+      toolbar.appendChild(pencilSizeSlider);
+
+      const undoButton = document.createElement('button');
+      undoButton.classList.add('tool-button');
+      undoButton.textContent = "Undo";
+      undoButton.addEventListener('click', () => { undoAction(drawingCanvas); });
+      toolbar.appendChild(undoButton);
+
+      whiteboardContainer.appendChild(toolbar);
+
+      const clearButton = document.createElement('button');
+      clearButton.textContent = "Clear Whiteboard";
+      clearButton.classList.add('clear-button');
+      clearButton.onclick = function () {
+        clearWhiteboard(`whiteboard-${currentIndex}`);
+        drawingCanvas.undoStack = [];
+      };
+      whiteboardContainer.appendChild(clearButton);
+
+      const gridSelector = document.createElement('div');
+      gridSelector.classList.add('grid-selector');
+      const gridLabel = document.createElement('label');
+      gridLabel.setAttribute("for", `grid-select-${currentIndex}`);
+      gridLabel.textContent = "Grid:";
+      gridSelector.appendChild(gridLabel);
+
+      const gridSelect = document.createElement('select');
+      gridSelect.id = `grid-select-${currentIndex}`;
+      const gridOptions = [
+         { value: "none", label: "No Grid" },
+         { value: "10", label: "Small Grid (10px)" },
+         { value: "20", label: "Medium Grid (20px)" },
+         { value: "50", label: "Large Grid (50px)" }
+      ];
+      gridOptions.forEach(opt => {
+         const optionElem = document.createElement('option');
+         optionElem.value = opt.value;
+         optionElem.textContent = opt.label;
+         gridSelect.appendChild(optionElem);
+      });
+      gridSelector.appendChild(gridSelect);
+      whiteboardContainer.appendChild(gridSelector);
+
+      container.appendChild(whiteboardContainer);
+      quizSection.appendChild(container);
+
+      // Set up whiteboard drawing with eraser preview support
+      setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
+
+      inputBox.addEventListener('input', debounce(function () {
+        const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
+        latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
+        MathJax.typeset();
+      }, 300));
+
+      inputBox.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') { checkAnswer(currentIndex); }
+      });
+
+      gridSelect.addEventListener('change', function() {
+         const value = gridSelect.value;
+         const gridCanvasId = `grid-${currentIndex}`;
+         if (value === "none") {
+            clearGrid(gridCanvasId);
+         } else {
+            drawGrid(gridCanvasId, parseInt(value));
+         }
+      });
+
+      questions.push({ answers: correctAnswersList, answered: false, attempts: 0 });
+      updateQuestionNumbers();
+    }
+
+    // Modified whiteboard setup accepts a preview canvas for showing the eraser outline
+    function setupWhiteboard(canvasId, previewCanvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const previewCanvas = document.getElementById(previewCanvasId);
+      const previewCtx = previewCanvas.getContext("2d");
+      let drawing = false;
+      let startX, startY;
+      let savedImageData = null;
+
+      if (!canvas.undoStack) { canvas.undoStack = []; }
+
+      function startDrawing(x, y) {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        if (canvas.dataset.tool === "eraser") {
+          ctx.strokeStyle = "white";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) * 2 : 10;
+        } else {
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+        }
+      }
+
+      function draw(x, y) {
+        if (!drawing) return;
+        if (canvas.dataset.tool !== "line") {
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+      }
+
+      function finalizeStroke() {
+        canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      }
+
+      function stopDrawing(x, y) {
+        if (!drawing) return;
+        if (canvas.dataset.tool === "line") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(savedImageData, 0, 0);
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+          ctx.stroke();
+          drawing = false;
+          savedImageData = null;
+          finalizeStroke();
+        } else {
+          drawing = false;
+          finalizeStroke();
+        }
+      }
+
+      canvas.addEventListener("mousedown", (e) => {
+        // Clear any existing preview on mousedown
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        if (canvas.dataset.tool === "line") {
+          startX = e.offsetX;
+          startY = e.offsetY;
+          drawing = true;
+          savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        } else {
+          startDrawing(e.offsetX, e.offsetY);
+        }
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        // If eraser tool is active and not drawing, show a dashed preview circle
+        if (canvas.dataset.tool === "eraser" && !drawing) {
+          previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+          previewCtx.beginPath();
+          const eraserSize = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) * 2 : 10;
+          previewCtx.arc(e.offsetX, e.offsetY, eraserSize / 2, 0, 2 * Math.PI);
+          previewCtx.setLineDash([5, 3]);
+          previewCtx.strokeStyle = "gray";
+          previewCtx.stroke();
+          return;
+        } else {
+          previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        }
+        if (!drawing) return;
+        if (canvas.dataset.tool === "line") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(savedImageData, 0, 0);
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(e.offsetX, e.offsetY);
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+          ctx.stroke();
+        } else {
+          draw(e.offsetX, e.offsetY);
+        }
+      });
+
+      canvas.addEventListener("mouseup", (e) => {
+        if (canvas.dataset.tool === "line") {
+          stopDrawing(e.offsetX, e.offsetY);
+        } else {
+          drawing = false;
+          finalizeStroke();
+        }
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      });
+
+      canvas.addEventListener("mouseleave", (e) => {
+        if (drawing && canvas.dataset.tool === "line") {
+          stopDrawing(e.offsetX, e.offsetY);
+        } else {
+          drawing = false;
+        }
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      });
+
+      ctx.lineCap = "round";
+    }
+
+    function clearWhiteboard(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function stripLatex(latex) {
+      return latex.replace(/\s+/g, '').replace(/\\left|\\right/g, '');
+    }
+
+    function checkAnswer(questionIndex) {
+      const inputBox = document.getElementById(`answer-box-${questionIndex}`);
+      const feedbackElement = document.getElementById(`feedback-${questionIndex}`);
+      const attemptCounter = document.getElementById(`attempt-counter-${questionIndex}`);
+      const studentAnswer = stripLatex(inputBox.value.trim());
+      const possibleAnswers = questions[questionIndex].answers.map(answer => stripLatex(answer.toString().trim()));
+
+      if (!questions[questionIndex].answered) {
+        questions[questionIndex].attempts += 1;
+        attemptCounter.textContent = `Attempts: ${questions[questionIndex].attempts}`;
+
+        if (possibleAnswers.includes(studentAnswer)) {
+          feedbackElement.textContent = "Correct!";
+          feedbackElement.className = "feedback correct";
+          questions[questionIndex].answered = true;
+          correctAnswers++;
+        } else if (questions[questionIndex].attempts >= 3) {
+          const correctAnswersList = questions[questionIndex].answers;
+          let answerString = correctAnswersList.length > 1 ? 
+                             correctAnswersList.join(" \\text{ or } ") : 
+                             correctAnswersList[0];
+          feedbackElement.innerHTML = `Incorrect. The correct answer is: $$${answerString}$$`;
+          feedbackElement.className = "feedback incorrect";
+          MathJax.typeset();
+          questions[questionIndex].answered = true;
+        } else {
+          feedbackElement.textContent = "Incorrect, try again.";
+          feedbackElement.className = "feedback incorrect";
+        }
+      }
+      updateScore();
+    }
+
+    function updateScore() {
+      correctScoreElement.textContent = correctAnswers;
+      totalQuestionsElement.textContent = questions.length;
+      const percentage = ((correctAnswers / questions.length) * 100).toFixed(2);
+      percentageScoreElement.textContent = `${percentage}%`;
+    }
+
+    function updateQuestionNumbers() {
+      totalQuestionsElement.textContent = questions.length;
+    }
+
+    // Sample questions
+
+    createQuestion(
+    "Sarah bought 3 identical notebooks for a total of \\$15.<br><br> (a) Write an equation for the total cost in terms of the cost of one notebook, \\(x\\).<br><br> (b) Solve the equation to find the cost of one notebook.",
+    ["3x=15,5"]
+);
+
+createQuestion(
+    "Tim has twice as many marbles as Sam. Together, they have 18 marbles.<br><br> (a) Write an equation representing the total number of marbles.<br><br> (b) Solve the equation to find the number of marbles Tim has.",
+    ["x+2x=18,12","3x=18,12"]
+);
+
+createQuestion(
+    "A plant grew \\(x\\) centimeters last week. This week it grew 3 centimeters more than last week, and the total growth over the two weeks is 13 centimeters.<br><br> (a) Write an equation to represent the total growth in terms of \\(x\\).<br><br> (b) Solve the equation to determine the growth last week.",
+    ["x+(x+3)=13,5","2x+3=13,5"]
+);
+
+createQuestion(
+    "Jenny saved an equal amount of money each week for 5 weeks, saving a total of \\$25.<br><br> (a) Write an equation that expresses the total savings in terms of the weekly saving amount \\(x\\).<br><br> (b) Solve the equation to find how much Jenny saved each week.",
+    ["5x=25,5"]
+);
+
+createQuestion(
+    "Five more than a number is 12.<br><br> (a) Write an equation for this statement using \\(x\\) to represent the number.<br><br> (b) Solve the equation to find the number.",
+    ["x+5=12,7"]
+);
+
+createQuestion(
+    "Twice a number decreased by 4 is 10.<br><br> (a) Write an equation that represents this situation with \\(x\\) as the number.<br><br> (b) Solve the equation to determine the number.",
+    ["2x-4=10,7"]
+);
+
+createQuestion(
+    "If you add 9 to a number and then divide the sum by 3, the result is 8.<br><br> (a) Write an equation that models this scenario using \\(x\\) as the unknown number.<br><br> (b) Solve the equation to find the number.",
+    ["(x+9)/3=8,15","\\frac{1}{3}(x+9)=8,15"]
+);
+
+createQuestion(
+    "The perimeter of a square is 20 centimeters.<br><br> (a) Write an equation for the perimeter of a square in terms of the side length \\(x\\).<br><br> (b) Find the area of the square.",
+    ["4x=20,25"]
+);
+
+createQuestion(
+    "A shirt costs \\(x\\) dollars. Two shirts cost \\$28.<br><br> (a) Write an equation to represent the total cost for two shirts in terms of \\(x\\).<br><br> (b) Solve the equation to find the price of one shirt.",
+    ["2x=28,14"]
+);
+
+createQuestion(
+    "A book is originally priced at \\(x\\) dollars. After a discount of \\$3, the book costs \\$15.<br><br> (a) Write an equation to determine the original price \\(x\\).<br><br> (b) If instead the store offered a 10\% discount on the original price, what would the sale price be?",
+    ["x-3=15,16.20","x-3=15,16.2"]
+);
+
+createQuestion(
+    "Mia bought 4 apples at \\(x\\) dollars each for a total of \\$12.<br><br> (a) what is the price of one apple, \\(x\\).<br><br> (b) Later, Mia buys 3 oranges, each costing twice as much as one apple. What is the total cost for the oranges?",
+    ["3,18"]
+);
+
+createQuestion(
+    "A classroom has 5 rows of chairs with \\(x\\) chairs in each row, totaling 30 chairs.<br><br> (a) How many chairs are in each row?.<br><br> (b) If 2 extra chairs are added to each row, what is the new total number of chairs?",
+    ["6,40"]
+);
+
+createQuestion(
+    "Alex ran \\(x\\) miles in 30 minutes. The next day, he ran 2 miles more and covered 10 miles in total.<br><br> (a) Set up and solve the equation for \\(x\\).<br><br> (b) Assuming he maintains the pace from day 1, how many miles will he run in 45 minutes?",
+    ["8,12"]
+);
+
+createQuestion(
+    "Three identical pencils have a total length of 45 centimeters.<br><br> (a) what is the length of one pencil, \\(x\\).<br><br> (b) If each pencil is cut exactly in half, what is the length of one half-pencil?",
+    ["15,7.5"]
+);
+
+createQuestion(
+    "An ice cream cone contains \\(x\\) scoops, and 3 cones together have 21 scoops.<br><br> (a) How many scoops are in one cone?.<br><br> (b) If each scoop costs \\$2, what is the cost of one cone?",
+    ["7,14"]
+);
+
+createQuestion(
+    "A concert ticket costs \\(x\\) dollars. Six tickets cost a total of \\$84.<br><br> (a) Write an equation to find \\(x\\).<br><br> (b) If buying two tickets now earns a \\$5 discount off the total price, what is the cost of buying 11 tickets?",
+    ["6x=84,129"]
+);
+
+createQuestion(
+    "Emma works \\(x\\) hours per week for 4 weeks at \\$5 per hour and earns \\$80 total.<br><br> (a) Write the equation to determine \\(x\\).<br><br> (b) If next month she works one extra hour per week, what will her new total earnings be over 4 weeks?",
+    ["4x*5=80,100","20x=80,100"]
+);
+
+createQuestion(
+    "A picture frame is sold for \\(x\\) dollars. Seven frames cost \\$91.<br><br> (a) what is the cost of one frame, \\(x\\).<br><br> (b) If a 10\% sales tax is added to the price of one frame, what is the cost of 13 frames?",
+    ["13,151.20","13,151.20"]
+);
+
+createQuestion(
+    "A recycling center pays \\(x\\) dollars per bottle. Recycling 10 bottles earns \\$20.<br><br> (a) Write an equation to find \\(x\\).<br><br> (b) How much will someone earn if they recycle 15 bottles?",
+    ["10x=20,30"]
+);
+
+
+
+
+    window.onload = function () {
+      MathJax.typeset();
+    };
+  </script>
+</body>
+</html>
