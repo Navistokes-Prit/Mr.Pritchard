@@ -37,7 +37,7 @@
   body.grade7 {
     --primary-color: #4a90e2;    /* Friendly Blue */
     --secondary-color: #50e3c2;  /* Soft Mint */
-    --accent-color: #d0021b;     /* Vibrant Red for highlights */
+    --accent-color: #4d4949;     /* Vibrant Red for highlights */
     --bg-dark: #4d4949;
     --bg-light: #ffffff;
   }
@@ -50,7 +50,7 @@
   body.grade9 {
     --primary-color: #2e7d32;    /* Earthy Green */
     --secondary-color: #388e3c;  /* A complementary green */
-    --accent-color: #c62828;     /* Deep Red accent */
+    --accent-color: #313432;     /* Deep Red accent */
     --bg-dark: #313432;
     --bg-light: #fafafa;
   }
