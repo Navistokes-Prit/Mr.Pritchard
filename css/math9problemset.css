@@ -1,0 +1,244 @@
+
+@media print {
+  html, body {
+    height: auto;
+    overflow: visible;
+  }
+  .scroll-container {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  .no-break {
+    page-break-inside: avoid;
+  }
+  /* Force each question container to print on its own page */
+  .question-container {
+    page-break-after: always;
+    /* For modern browsers: */
+    break-after: page;
+  }
+}
+
+ /* Adjusted whiteboard dimensions: 900px wide and 600px high */
+ .canvas-container {
+  position: relative;
+  width: 900px;
+  height: 600px;
+  border: 1px solid #ccc;
+}
+.canvas-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+/* Grid and preview canvases do not intercept pointer events */
+.grid-canvas, .preview-canvas {
+  pointer-events: none;
+}
+
+
+/* --------- Call-to-Action Button --------- */
+.cta-button {
+  display: inline-block;
+  padding: 50px;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+    /* Global Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2e7d32;
+      margin: 0;
+      padding: 0;
+    }
+    #banner {
+      background-color: #313432;
+      color: white;
+      text-align: center;
+      padding: 40px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 2em;
+      margin: 0;
+    }
+    /* Help Box */
+    #help-box {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.9em;
+      width: 300px;
+      z-index: 1000;
+      transition: height 0.3s ease, width 0.3s ease;
+    }
+    #help-box.minimized {
+      height: 40px;
+      overflow: hidden;
+      width: 150px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    #help-box-toggle {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      color: #007bff;
+    }
+    /* Quiz Section */
+    #quiz-section {
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .question-container {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .answer-box {
+      width: 70%;
+      padding: 10px;
+      margin-right: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .submit-button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .submit-button:hover {
+      background-color: #218838;
+    }
+    .feedback {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .correct {
+      color: green;
+    }
+    .incorrect {
+      color: red;
+    }
+    .answer-latex {
+      font-size: 1em;
+      margin-top: 5px;
+      color: #666;
+    }
+    #score-section {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    .score {
+      color: #007bff;
+      font-weight: bold;
+    }
+    .attempt-counter {
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 5px;
+    }
+    /* Whiteboard & Toolbars */
+    .whiteboard-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 10px;
+    }
+    /* The canvases are positioned absolutely inside a relative container */
+    .canvas-container {
+      position: relative;
+      width: 900px;
+      height: 600px;
+      border: 2px solid black;
+      background-color: white;
+    }
+    /* Ensure the grid canvas does not capture pointer events */
+    .grid-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* The drawing canvas sits on top */
+    .drawing-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+    .tool-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .tool-button {
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+    }
+    .tool-button:hover {
+      background-color: #0056b3;
+    }
+    .eraser-button {
+      background-color: #dc3545;
+    }
+    .eraser-button:hover {
+      background-color: #c82333;
+    }
+    .clear-button {
+      background-color: gray;
+      margin-top: 10px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+    .clear-button:hover {
+      background-color: darkgray;
+    }
+    /* Grid selector styling */
+    .grid-selector {
+      margin-top: 10px;
+    }
+    .grid-selector label {
+      margin-right: 5px;
+    }
