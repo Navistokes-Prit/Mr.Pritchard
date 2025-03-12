@@ -92,6 +92,33 @@
     animation: none;
   }
   
+ /* This container holds the notes and the questions button side-by-side */
+ .unit-home {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 40px;
+}
+/* Left column: Notes styling */
+.unit-home .notes {
+  flex: 1;
+  padding: 10px;
+  background: var(--bg-light);
+  border-radius: 5px;
+  color: black;
+}
+/* Right column: Questions button container */
+.unit-home .question-link {
+  width: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+flex-direction: column; /* Stack problem sets vertically */
+gap: 10px; /* Space between buttons */
+}
+
+
+
   @keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -114,6 +141,18 @@
   .cta-button {
     display: inline-block;
     padding: 50px;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: transform 0.3s ease, filter 0.3s ease;
+  }
+
+  .ctb-button {
+    display: inline-block;
+    padding: 20px;
     background: var(--accent-color);
     color: #fff;
     font-size: 1.2em;
