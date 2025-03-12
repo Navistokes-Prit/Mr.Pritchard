@@ -9,24 +9,7 @@
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <link rel="stylesheet" href="../../../css/math10problemset.css" />
-  <style>
-    /* Adjusted whiteboard dimensions: 900px wide and 600px high */
-    .canvas-container {
-      position: relative;
-      width: 900px;
-      height: 600px;
-      border: 1px solid #ccc;
-    }
-    .canvas-container canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    /* Grid and preview canvases do not intercept pointer events */
-    .grid-canvas, .preview-canvas {
-      pointer-events: none;
-    }
-  </style>
+  
 </head>
 <body>
   <!-- Help Box -->
@@ -502,6 +485,7 @@
     }
 
     // Sample questions
+
     createQuestion(
       "An airplane is flying at a constant altitude of 800 meters. The pilot observes the top of a 50m tall air traffic control tower at an angle of depression of 7°. Determine the horizontal distance between the airplane and the tower.",
       ["6108.3"]
@@ -526,6 +510,7 @@
       "A person standing near the base of a skyscraper measures the angle of elevation from the ground to the top of the skyscraper to be \\( 40^{\\circ} \\). The person then walks 500 ft straight back and measures the angle of elevation to now be \\( 20^{\\circ} \\). How tall is the skyscraper?",
       ["321.4"]
     );
+
 
     window.onload = function () {
       MathJax.typeset();

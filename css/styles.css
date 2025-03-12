@@ -63,7 +63,7 @@
   body.grade10 {
     --primary-color: #6a1b9a;    /* Rich Purple */
     --secondary-color: #8e24aa;  /* Vivid Purple */
-    --accent-color: #ffb300;     /* Warm Gold */
+    --accent-color: #121212;     /* Warm Gold */
     --bg-dark: #121212;
     --bg-light: #e8e5e5;
   }
@@ -101,6 +101,7 @@
   .hero-content h1 {
     font-size: 3.5em;
     margin-bottom: 20px;
+    color: white;
   }
   
   .hero-content p {
