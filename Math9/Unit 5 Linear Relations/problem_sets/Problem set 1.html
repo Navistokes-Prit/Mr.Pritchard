@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Math 9</title>
+  <title>Math Quiz with Whiteboard Tools</title>
   
   <!-- MathJax for LaTeX -->
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -28,7 +28,6 @@
   <div id="banner">
     <h2>MATH 9</h2>
     <a class="cta-button" href="../Unit 5 linear relations.html">Back</a>
-
   </div>
 
   <!-- Quiz Section -->
@@ -104,6 +103,8 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      // Update saved drawing after undo
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
     // Create a new question with a whiteboard that includes a preview layer for the eraser
@@ -252,6 +253,7 @@
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
@@ -282,9 +284,21 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
+      // Restore saved drawing for this whiteboard if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
       // Set up whiteboard drawing with eraser preview support
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Update LaTeX rendering on answer input (without saving the answer)
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
@@ -344,6 +358,8 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        // Save the current drawing to localStorage
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -503,6 +519,7 @@ createQuestion("Find the intersection point of the lines: <br> \\( 3x + 2y = 12 
 createQuestion("Solve the equation: <br> \\( 5(x - 2) + 2(3x + 4) = 4x + 18 \\).", ["\\frac{20}{7}"]);
 
 createQuestion("Write the equation of the line with slope \\(2\\) and \\(y\\)-intercept \\(-5\\).", ["y = 2x - 5"]);
+
 
 
     window.onload = function () {
