@@ -1,5 +1,5 @@
 /* ===========================================
-   ORIGINAL THEME
+  Summer Styles
    =========================================== */
    * {
     margin: 0;
@@ -7,9 +7,7 @@
     box-sizing: border-box;
   }
   
-
-  .container3{
-
+  .container3 {
     max-width: 960px; /* Set a maximum width */
     margin: 0 auto; /* Center the container horizontally */
     display: flex;
@@ -17,80 +15,79 @@
     gap: 10px;
     padding: 20px;
   }
-
+  
   .column3 {
     flex: 1;
     min-width: 250px; /* Ensures columns shrink properly on smaller screens */
-
   }
+  
   /* Style for the images */
   .column3 img {
     width: 35%;
     height: auto;
     display: block;
-    margin: 0 auto;      /* Centers the block element horizontally */
-
+    margin: 0 auto; /* Centers the block element horizontally */
   }
-
+  
   body {
     font-family: 'Roboto', sans-serif;
     line-height: 1.6;
   }
   
   /* ===========================================
-     Theme Variable Definitions
+     Theme Variable Definitions - Summer Themes
      =========================================== */
   
-  /* ---------- Main Home Page Theme ---------- */
+  /* ---------- Summer Home Theme ---------- */
   body.home {
-    background: #f5f5f5;  /* light, neutral background */
+    background: #FFFAF0;  /* Floral White */
     color: #333;
   }
   body.home {
-    --primary-color: #0d47a1;    /* Deep Blue */
-    --secondary-color: #1976d2;  /* Lighter Blue */
-    --accent-color: #f9a825;     /* Warm Amber */
-    --bg-dark: #424242;
-    --bg-light: #ffffff;
+    --primary-color: #1E90FF;    /* Dodger Blue */
+    --secondary-color: #F4A460;  /* Sandy Brown */
+    --accent-color: #FFD700;     /* Gold */
+    --bg-dark: #00008B;          /* Dark Blue */
+    --bg-light: #FFFFFF;         /* White */
   }
   
-  /* ---------- Grade 7 Theme ---------- */
+  /* ---------- Summer Grade 7 Theme ---------- */
   body.grade7 {
-    background: #ffffff;
+    background: #FFF5EE; /* Seashell */
     color: #333;
   }
   body.grade7 {
-    --primary-color: #4a90e2;    /* Friendly Blue */
-    --secondary-color: #50e3c2;  /* Soft Mint */
-    --accent-color: #4d4949;     /* Vibrant Red for highlights */
-    --bg-dark: #4d4949;
-    --bg-light: #ffffff;
+    --primary-color: #FF7F50;    /* Coral */
+    --secondary-color: #FF6347;  /* Tomato */
+    --accent-color: #FF4500;     /* Orange Red */
+    --bg-dark: #8B0000;          /* Dark Red */
+    --bg-light: #FFFFFF;         /* White */
   }
   
-  /* ---------- Grade 9 Theme ---------- */
+  /* ---------- Summer Grade 9 Theme ---------- */
   body.grade9 {
-    background: #f8f8f8;
+    background: #E0FFFF; /* Light Cyan */
     color: #333;
   }
   body.grade9 {
-    --primary-color: #2e7d32;    /* Earthy Green */
-    --secondary-color: #c3c91a;  /* A complementary green */
-    --accent-color: #313432;     /* Deep Red accent */
-    --bg-dark: #313432;
-    --bg-light: #fafafa;
+    --primary-color: #00CED1;    /* Dark Turquoise */
+    --secondary-color: #20B2AA;  /* Light Sea Green */
+    --accent-color: #008080;     /* Teal */
+    --bg-dark: #004C4C;          /* Deep Teal */
+    --bg-light: #FFFFFF;         /* White */
   }
   
-  /* ---------- Grade 10 Theme ---------- */
+  /* ---------- Summer Grade 10 Theme ---------- */
   body.grade10 {
-    background: #1e1e1e;
-    color: #e0e0e0;
+    background: #FFFACD; /* Lemon Chiffon */
+    color: #333;
   }
   body.grade10 {
-    --primary-color: #6a1b9a;    /* Rich Purple */
-    --secondary-color: #3725b2;  /* Vivid Purple */
-    --accent-color: #121212;     /* Warm Gold */
-    --bg-dark: #121212;
-    --bg-light: #e8e5e5;
+    --primary-color: #FFA500;    /* Orange */
+    --secondary-color: #FF8C00;  /* Dark Orange */
+    --accent-color: #FFEC8B;     /* Light Goldenrod Yellow */
+    --bg-dark: #B8860B;          /* Dark Goldenrod */
+    --bg-light: #FFFFFF;         /* White */
   }
   
   /* ===========================================
@@ -114,36 +111,34 @@
   body.grade7 .hero,
   body.grade9 .hero,
   body.grade10 .hero {
-    animation: gradientShift 12s ease infinite;
+    animation: none;
   }
   
- /* This container holds the notes and the questions button side-by-side */
- .unit-home {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  margin-top: 40px;
-}
-/* Left column: Notes styling */
-.unit-home .notes {
-  flex: 1;
-  padding: 10px;
-  background: var(--bg-light);
-  border-radius: 5px;
-  color: black;
-}
-/* Right column: Questions button container */
-.unit-home .question-link {
-  width: 300px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-flex-direction: column; /* Stack problem sets vertically */
-gap: 10px; /* Space between buttons */
-}
-
-
-
+  /* This container holds the notes and the questions button side-by-side */
+  .unit-home {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-top: 40px;
+  }
+  /* Left column: Notes styling */
+  .unit-home .notes {
+    flex: 1;
+    padding: 10px;
+    background: var(--bg-light);
+    border-radius: 5px;
+    color: black;
+  }
+  /* Right column: Questions button container */
+  .unit-home .question-link {
+    width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column; /* Stack problem sets vertically */
+    gap: 10px; /* Space between buttons */
+  }
+  
   @keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -174,7 +169,7 @@ gap: 10px; /* Space between buttons */
     border-radius: 50px;
     transition: transform 0.3s ease, filter 0.3s ease;
   }
-
+  
   .ctb-button {
     display: inline-block;
     padding: 20px;
