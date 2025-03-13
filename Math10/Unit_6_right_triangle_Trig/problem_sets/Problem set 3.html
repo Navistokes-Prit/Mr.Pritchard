@@ -284,14 +284,6 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
-      // Restore saved answer if exists
-      const savedAnswer = localStorage.getItem(`answer-box-${currentIndex}`);
-      if (savedAnswer) {
-        inputBox.value = savedAnswer;
-        latexOutput.innerHTML = `$$${savedAnswer}$$`;
-        MathJax.typeset();
-      }
-
       // Restore saved drawing for this whiteboard if available
       const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
       if (savedDrawing) {
@@ -306,12 +298,11 @@
       // Set up whiteboard drawing with eraser preview support
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
-      // Save answer on input
+      // Update LaTeX rendering on answer input (without saving the answer)
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
         MathJax.typeset();
-        localStorage.setItem(`answer-box-${currentIndex}`, inputBox.value);
       }, 300));
 
       inputBox.addEventListener('keydown', function (event) {
@@ -512,69 +503,69 @@
     // Sample questions
 
     createQuestion(
-    "A damsel is in distress and is being held captive in a tower. Her knight in shining armor is on the ground below with a ladder. When the knight stands 15 feet from the base of the tower and looks up at his precious damsel, the angle of elevation to her window is 60 degrees. How long does the ladder have to be?",
-    ["30"]
-);
+      "A damsel is in distress and is being held captive in a tower. Her knight in shining armor is on the ground below with a ladder. When the knight stands 15 feet from the base of the tower and looks up at his precious damsel, the angle of elevation to her window is 60 degrees. How long does the ladder have to be?",
+      ["30"]
+    );
 
-createQuestion(
-    "You are 200 yards from a river. Rather than walking directly to the river, you walk 400 yards along a straight path to the river’s edge. Find the acute angle between the path and the river’s edge.",
-    ["30"]
-);
+    createQuestion(
+      "You are 200 yards from a river. Rather than walking directly to the river, you walk 400 yards along a straight path to the river’s edge. Find the acute angle between the path and the river’s edge.",
+      ["30"]
+    );
 
-createQuestion(
-    "A 12-meter flagpole casts a 9-meter shadow. Find the angle of elevation of the sun.",
-    ["53.1"]
-);
+    createQuestion(
+      "A 12-meter flagpole casts a 9-meter shadow. Find the angle of elevation of the sun.",
+      ["53.1"]
+    );
 
-createQuestion(
-    "Suppose you’re flying a kite, and it gets caught at the top of a tree. You’ve let out all 100 feet of string for the kite, and the angle that the string makes with the ground is 75 degrees. Instead of worrying about how to get your kite back, you wonder: “How tall is that tree?”",
-    ["96.6"]
-);
+    createQuestion(
+      "Suppose you’re flying a kite, and it gets caught at the top of a tree. You’ve let out all 100 feet of string for the kite, and the angle that the string makes with the ground is 75 degrees. Instead of worrying about how to get your kite back, you wonder: “How tall is that tree?”",
+      ["96.6"]
+    );
 
-createQuestion(
-    "A submersible traveling at a depth of 250 feet dives at an angle of \\( 15^{\\circ} \\) with respect to a line parallel to the water’s surface. It travels a horizontal distance of 1500 feet during the dive. What is the depth of the submersible after the dive? (to the nearest whole number)",
-    ["652"]
-);
+    createQuestion(
+      "A submersible traveling at a depth of 250 feet dives at an angle of \\( 15^{\\circ} \\) with respect to a line parallel to the water’s surface. It travels a horizontal distance of 1500 feet during the dive. What is the depth of the submersible after the dive? (to the nearest whole number)",
+      ["652"]
+    );
 
-createQuestion(
-    "A fire department’s longest ladder is 110 feet long, and the safety regulation states that they can use it for rescues up to 100 feet off the ground. What is the maximum safe angle of elevation for the rescue ladder?",
-    ["65.4"]
-);
+    createQuestion(
+      "A fire department’s longest ladder is 110 feet long, and the safety regulation states that they can use it for rescues up to 100 feet off the ground. What is the maximum safe angle of elevation for the rescue ladder?",
+      ["65.4"]
+    );
 
-createQuestion(
-    "Brothers Bob and Tom Katz buy a tent that has a center pole 6.25 feet high. If the sides of the tent are supposed to make a \\( 50^{\\circ} \\) angle with the ground, how wide is the tent?",
-    ["10.5"]
-);
+    createQuestion(
+      "Brothers Bob and Tom Katz buy a tent that has a center pole 6.25 feet high. If the sides of the tent are supposed to make a \\( 50^{\\circ} \\) angle with the ground, how wide is the tent?",
+      ["10.5"]
+    );
 
-createQuestion(
-    "A helicopter is hovering at a constant altitude of 900 meters. The pilot spots the top of a 60-meter-tall radio tower at an angle of depression of 8°. Determine the horizontal distance between the helicopter and the tower.",
-    ["5976.9"]
-);
+    createQuestion(
+      "A helicopter is hovering at a constant altitude of 900 meters. The pilot spots the top of a 60-meter-tall radio tower at an angle of depression of 8°. Determine the horizontal distance between the helicopter and the tower.",
+      ["5976.9"]
+    );
 
-createQuestion(
-    "A lighthouse stands on a rocky cliff, making the top of the lighthouse 85 meters above sea level. The keeper at the top spots a fishing boat at an angle of depression of 10°, while a person standing on the shore at sea level between the boat and lighthouse observes the top of the lighthouse at an angle of elevation of 20°. Find the total distance from the fishing boat to the person on the shore.",
-    ["248.5"]
-);
+    createQuestion(
+      "A lighthouse stands on a rocky cliff, making the top of the lighthouse 85 meters above sea level. The keeper at the top spots a fishing boat at an angle of depression of 10°, while a person standing on the shore at sea level between the boat and lighthouse observes the top of the lighthouse at an angle of elevation of 20°. Find the total distance from the fishing boat to the person on the shore.",
+      ["248.5"]
+    );
 
-createQuestion(
-    "A drone is hovering 250 meters above the ground. One observer sees the drone at a 28° angle of elevation, while another observer on the opposite side (at the same ground level) sees it at a 22° angle of elevation. Determine how far apart the two observers are on the ground.",
-    ["1089.0","1089"]
-);
+    createQuestion(
+      "A drone is hovering 250 meters above the ground. One observer sees the drone at a 28° angle of elevation, while another observer on the opposite side (at the same ground level) sees it at a 22° angle of elevation. Determine how far apart the two observers are on the ground.",
+      ["1089.0","1089"]
+    );
 
-createQuestion(
-    "A roller coaster reaches a maximum height of 50 meters above the ground. At first, a person on the ground measures a 40° angle of elevation to this highest point. Later, the rider at the top sees the person on the ground at a 12° angle of depression. How far did the observer move between the two measurements?",
-    ["175.6"]
-);
+    createQuestion(
+      "A roller coaster reaches a maximum height of 50 meters above the ground. At first, a person on the ground measures a 40° angle of elevation to this highest point. Later, the rider at the top sees the person on the ground at a 12° angle of depression. How far did the observer move between the two measurements?",
+      ["175.6"]
+    );
 
-createQuestion(
-    "A person standing near the base of a tall building measures the angle of elevation from the ground to the top of the building as \\( 42^{\\circ} \\). The person then walks 400 feet straight back and measures the new angle of elevation to be \\( 22^{\\circ} \\). How tall is the building?",
-    ["293.2"]
-);
+    createQuestion(
+      "A person standing near the base of a tall building measures the angle of elevation from the ground to the top of the building as \\( 42^{\\circ} \\). The person then walks 400 feet straight back and measures the new angle of elevation to be \\( 22^{\\circ} \\). How tall is the building?",
+      ["293.2"]
+    );
 
-createQuestion(
-    "A hot air balloon is floating 300m above the ground. It is attached by 2 wires on either side to stop it flying away. If one wire has an angle of elevation of \\(25^{\\circ}\\) and the other an angle of \\(40^{\\circ}\\). What is the total length of wire needed?",
-    ["1176.6"]
-);
+    createQuestion(
+      "A hot air balloon is floating 300m above the ground. It is attached by 2 wires on either side to stop it flying away. If one wire has an angle of elevation of \\(25^{\\circ}\\) and the other an angle of \\(40^{\\circ}\\). What is the total length of wire needed?",
+      ["1176.6"]
+    );
 
     window.onload = function () {
       MathJax.typeset();
