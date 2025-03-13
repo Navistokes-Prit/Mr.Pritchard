@@ -28,7 +28,6 @@
   <div id="banner">
     <h2>MATH 7</h2>
     <a class="cta-button" href="../Unit6_equations.html">Back</a>
-
   </div>
 
   <!-- Quiz Section -->
@@ -104,6 +103,8 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      // Update saved drawing after undo
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
     // Create a new question with a whiteboard that includes a preview layer for the eraser
@@ -252,6 +253,7 @@
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
@@ -282,9 +284,21 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
+      // Restore saved drawing for this whiteboard if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
       // Set up whiteboard drawing with eraser preview support
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Update LaTeX rendering on answer input (without saving the answer)
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
@@ -344,6 +358,8 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        // Save the current drawing to localStorage
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -486,29 +502,24 @@
 
     // Sample questions
 
-    createQuestion("Solve for \\( x \\): \\( 3x+4 = 19 \\)", ["x = 5"]);
-createQuestion("Solve for \\( x \\): \\( 4x - 9 = 11 \\)", ["x = 5"]);
-createQuestion("Solve for \\( x \\): \\( 6x-7 = 5x+8 \\)", ["x = 15"]);
-createQuestion("Solve for \\( x \\): \\( 7x + 15 = 5x + 35 \\)", ["x = 10"]);
-createQuestion("Solve for \\( x \\): \\( 2(4x+1) = 30 \\)", ["x = 3.5"]);
-createQuestion("Solve for \\( x \\): \\( 2(3x - 4) = 20 \\)", ["x = 6"]);
-createQuestion("Solve for \\( x \\): \\( 5(x-3) + 2(3x+4) = 10 \\)", ["x = 4"]);
-createQuestion("Solve for \\( x \\): \\( 3(x+6) - 2(4x-5) = 7 \\)", ["x = 11"]);
-createQuestion("Solve for \\( x \\): \\( 4(x+2) - 3(2x-5) = 6 \\)", ["x = 4"]);
-createQuestion("Solve for \\( x \\): \\( 4(x-2) + 3(2x+1) = 5x+17 \\)", ["x = 9"]);
-createQuestion("A bookstore sells bookmarks for \\$1.50 each. If you buy \\( x \\) bookmarks and spend \\$18, set up and solve an equation for \\( x \\).", ["x = 12"]);
-createQuestion("A candy store sells chocolates for \\$2 each. If you buy \\( x \\) chocolates and spend \\$26, set up and solve an equation for \\( x \\).", ["x = 13"]);
-createQuestion("The perimeter of a rectangular garden is 50 cm. If the length is \\( x+3 \\) cm and the width is \\( x \\) cm, what is the area of the garden?", ["Area = 144 cm²"]);
-createQuestion("The perimeter of a square is 40 cm. What is the length of one side?", ["Side length = 10 cm"]);
-createQuestion("Alice and Bob are saving money. Alice starts with \\$60 and saves \\$7 per week, while Bob starts with \\$30 and saves \\$10 per week. After how many weeks will they have the same amount of money?", ["w = 10"]);
-createQuestion("Lily and Mark are saving money. Lily starts with \\$80 and saves \\$8 per week, while Mark starts with \\$20 and saves \\$12 per week. After how many weeks will they have the same amount of money?", ["w = 15"]);
-createQuestion("Two siblings collected trading cards. Together they collected 90 cards, and one collected 20 more cards than the other. How many cards did each sibling collect?", ["One collected 35, the other collected 55"]);
-createQuestion("Anna and Ben collected stamps. Together they collected 75 stamps, and Anna collected 15 more stamps than Ben. How many stamps did each of them collect?", ["Anna = 45, Ben = 30"]);
-
-
-
-
-
+    createQuestion("Solve for \\( x \\): \\( 3x+4 = 19 \\)", ["x = 5","5"]);
+createQuestion("Solve for \\( x \\): \\( 4x - 9 = 11 \\)", ["x = 5","5"]);
+createQuestion("Solve for \\( x \\): \\( 6x-7 = 5x+8 \\)", ["x = 15","15"]);
+createQuestion("Solve for \\( x \\): \\( 7x + 15 = 5x + 35 \\)", ["x = 10","10"]);
+createQuestion("Solve for \\( x \\): \\( 2(4x+1) = 30 \\)", ["x = 3.5","3.5","\\frac{7}{2}"]);
+createQuestion("Solve for \\( x \\): \\( 2(3x - 4) = 20 \\)", ["4.\\overline{6}","\\frac{14}{3}"]);
+createQuestion("Solve for \\( x \\): \\( 5(x-3) + 2(3x+4) = 10 \\)", ["\\frac{17}{11}"]);
+createQuestion("Solve for \\( x \\): \\( 3(x+6) - 2(4x-5) = 7 \\)", ["4.2","\\frac{21}{5}"]);
+createQuestion("Solve for \\( x \\): \\( 4(x+2) - 3(2x-5) = 6 \\)", ["\\frac{17}{2}","8.5"]);
+createQuestion("Solve for \\( x \\): \\( 4(x-2) + 3(2x+1) = 5x+17 \\)", ["\\frac{22}{5}","4.4"]);
+createQuestion("A bookstore sells bookmarks for \\$1.50 each. If you buy \\( x \\) bookmarks and spend \\$18, set up and solve an equation for \\( x \\).", ["x = 12","12"]);
+createQuestion("A candy store sells chocolates for \\$2 each. If you buy \\( x \\) chocolates and spend \\$26, set up and solve an equation for \\( x \\).", ["x = 13","13"]);
+createQuestion("The perimeter of a rectangular garden is 50 cm. If the length is \\( x+3 \\) cm and the width is \\( x \\) cm, what is the area of the garden?", ["154"]);
+createQuestion("The perimeter of a square is 40 cm. What is the length of one side?", ["10"]);
+createQuestion("Alice and Bob are saving money. Alice starts with \\$60 and saves \\$7 per week, while Bob starts with \\$30 and saves \\$10 per week. After how many weeks will they have the same amount of money?", ["10"]);
+createQuestion("Lily and Mark are saving money. Lily starts with \\$80 and saves \\$8 per week, while Mark starts with \\$20 and saves \\$12 per week. After how many weeks will they have the same amount of money?", ["15"]);
+createQuestion("Two siblings collected trading cards. Together they collected 90 cards, and one collected 20 more cards than the other. How many cards did each sibling collect?", ["35,55","55,35"]);
+createQuestion("Anna and Ben collected stamps. Together they collected 75 stamps, and Anna collected 15 more stamps than Ben. How many stamps did each of them collect?", ["45,30","30,45"]);
 
     window.onload = function () {
       MathJax.typeset();
