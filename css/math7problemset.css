@@ -37,6 +37,20 @@
 }
 
 
+/* --------- Call-to-Action Button --------- */
+.cta-button {
+  display: inline-block;
+  padding: 50px;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+
    /* Floating toolbar positioned halfway between a 960px container and the right edge */
    #floating-toolbar {
     position: fixed;
@@ -112,28 +126,15 @@
   }
 
 
-/* --------- Call-to-Action Button --------- */
-.cta-button {
-  display: inline-block;
-  padding: 50px;
-  background: var(--accent-color);
-  color: #fff;
-  font-size: 1.2em;
-  font-weight: bold;
-  text-decoration: none;
-  border-radius: 50px;
-  transition: transform 0.3s ease, filter 0.3s ease;
-}
-
     /* Global Styles */
     body {
       font-family: Arial, sans-serif;
-      background-color: #4a90e2;
+      background-color: #7e807e;
       margin: 0;
       padding: 0;
     }
     #banner {
-      background-color: #4d4949;
+      background-color: #4a90e2;
       color: white;
       text-align: center;
       padding: 40px;
