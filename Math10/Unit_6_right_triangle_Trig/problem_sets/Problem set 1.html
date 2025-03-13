@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Math Quiz with Whiteboard Tools</title>
+  <title>Math Quiz with Floating Whiteboard Tools</title>
   
   <!-- MathJax for LaTeX -->
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script id="MathJax-script" async 
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
   <link rel="stylesheet" href="../../../css/math10problemset.css" />
   
+ 
 </head>
 <body>
   <!-- Help Box -->
@@ -24,11 +27,27 @@
     <p><strong>Repeating:</strong> <code>\overline{number}</code></p>
   </div>
 
+  <!-- Floating Toolbar -->
+  <div id="floating-toolbar">
+    <button class="tool-button" data-tool="pencil" data-color="black" 
+      style="background-color: black; color: white;">Black</button>
+    <button class="tool-button" data-tool="pencil" data-color="red" 
+      style="background-color: red; color: white;">Red</button>
+    <button class="tool-button" data-tool="pencil" data-color="blue" 
+      style="background-color: blue; color: white;">Blue</button>
+    <button class="tool-button" data-tool="pencil" data-color="green" 
+      style="background-color: green; color: white;">Green</button>
+    <button class="tool-button" data-tool="eraser">Eraser Tool</button>
+    <button class="tool-button" data-tool="line">Line Tool</button>
+    <label for="pencil-size">Pencil and Eraser Size:</label>
+    <input type="range" id="pencil-size" min="1" max="20" value="2">
+    <button class="tool-button" id="undo-btn">Undo</button>
+  </div>
+
   <!-- Banner -->
   <div id="banner">
     <h2>MATH 10</h2>
     <a class="cta-button" href="../Unit_6_right_triangle_trig.html">Back</a>
-
   </div>
 
   <!-- Quiz Section -->
@@ -43,6 +62,7 @@
   </div>
 
   <script>
+    // Help Box Toggle
     const helpBox = document.getElementById('help-box');
     const toggleButton = document.getElementById('help-box-toggle');
     toggleButton.addEventListener('click', () => {
@@ -57,6 +77,52 @@
     let correctAnswers = 0;
     let questionIndex = 0;
     let questions = [];
+
+    // Global active canvas variable for the floating toolbar
+    let activeCanvas = null;
+
+    // When a whiteboard canvas is clicked, mark it as active
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'CANVAS' && e.target.classList.contains('drawing-canvas')) {
+        activeCanvas = e.target;
+      }
+    });
+
+    // Floating toolbar button events (with active tool checkmark)
+    document.querySelectorAll('#floating-toolbar .tool-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active state from all toolbar buttons (except for undo)
+        if (button.id !== 'undo-btn') {
+          document.querySelectorAll('#floating-toolbar .tool-button')
+                  .forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+        }
+        
+        if (!activeCanvas) {
+          alert('Please click on a whiteboard to activate it.');
+          return;
+        }
+        const tool = button.getAttribute('data-tool');
+        if (tool) {
+          activeCanvas.dataset.tool = tool;
+          // Set color if specified
+          const color = button.getAttribute('data-color');
+          if (color) {
+            activeCanvas.dataset.color = color;
+          }
+        }
+        if (button.id === 'undo-btn') {
+          undoAction(activeCanvas);
+        }
+      });
+    });
+
+    // Update pencil size from the global slider
+    document.getElementById('pencil-size').addEventListener('input', (e) => {
+      if (activeCanvas) {
+        activeCanvas.dataset.pencilSize = e.target.value;
+      }
+    });
 
     // Debounce helper to reduce MathJax rendering frequency
     function debounce(func, delay) {
@@ -104,9 +170,10 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
-    // Create a new question with a whiteboard that includes a preview layer for the eraser
+    // Create a new question with a whiteboard (no individual toolbar)
     function createQuestion(questionText, correctAnswersList) {
       let currentIndex = questionIndex++;
       const container = document.createElement('div');
@@ -117,10 +184,10 @@
       const questionContent = document.createElement('div');
       questionContent.classList.add('question-content');
 
-      const question = document.createElement('div');
-      question.classList.add('question');
-      question.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
-      questionContent.appendChild(question);
+      const questionElem = document.createElement('div');
+      questionElem.classList.add('question');
+      questionElem.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(questionElem);
 
       const inputBox = document.createElement('input');
       inputBox.type = 'text';
@@ -159,7 +226,7 @@
       const canvasContainer = document.createElement('div');
       canvasContainer.classList.add('canvas-container');
 
-      // Grid canvas fills the whole whiteboard (900x600)
+      // Grid canvas (900x600)
       const gridCanvas = document.createElement('canvas');
       gridCanvas.id = `grid-${currentIndex}`;
       gridCanvas.width = 900;
@@ -175,6 +242,9 @@
       drawingCanvas.height = 600;
       drawingCanvas.classList.add('drawing-canvas');
       drawingCanvas.undoStack = [];
+      drawingCanvas.dataset.tool = "pencil";
+      drawingCanvas.dataset.color = "black";
+      drawingCanvas.dataset.pencilSize = "2";
       canvasContainer.appendChild(drawingCanvas);
 
       // Preview canvas for eraser (on top)
@@ -188,73 +258,18 @@
 
       whiteboardContainer.appendChild(canvasContainer);
 
-      // Toolbar
-      const toolbar = document.createElement('div');
-      toolbar.classList.add('tool-buttons');
-
-      const colors = ["black", "red", "blue", "green"];
-      colors.forEach(color => {
-        const colorButton = document.createElement('button');
-        colorButton.classList.add('tool-button');
-        colorButton.style.backgroundColor = color;
-        colorButton.title = color;
-        colorButton.addEventListener("click", () => {
-          drawingCanvas.dataset.tool = "pencil";
-          drawingCanvas.dataset.color = color;
-        });
-        toolbar.appendChild(colorButton);
-      });
-
-      const eraserToolButton = document.createElement('button');
-      eraserToolButton.classList.add('tool-button', 'eraser-button');
-      eraserToolButton.textContent = "Eraser Tool";
-      eraserToolButton.addEventListener("click", () => {
-        drawingCanvas.dataset.tool = "eraser";
-      });
-      toolbar.appendChild(eraserToolButton);
-
-      const lineToolButton = document.createElement('button');
-      lineToolButton.classList.add('tool-button');
-      lineToolButton.textContent = "Line Tool";
-      lineToolButton.addEventListener("click", () => {
-        drawingCanvas.dataset.tool = "line";
-      });
-      toolbar.appendChild(lineToolButton);
-
-      const pencilSizeLabel = document.createElement('label');
-      pencilSizeLabel.setAttribute("for", `pencil-size-${currentIndex}`);
-      pencilSizeLabel.textContent = "Pencil Size:";
-      toolbar.appendChild(pencilSizeLabel);
-
-      const pencilSizeSlider = document.createElement('input');
-      pencilSizeSlider.type = 'range';
-      pencilSizeSlider.id = `pencil-size-${currentIndex}`;
-      pencilSizeSlider.min = "1";
-      pencilSizeSlider.max = "10";
-      pencilSizeSlider.value = "2";  // Default thickness
-      pencilSizeSlider.style.marginLeft = "5px";
-      pencilSizeSlider.addEventListener('input', () => {
-        drawingCanvas.dataset.pencilSize = pencilSizeSlider.value;
-      });
-      toolbar.appendChild(pencilSizeSlider);
-
-      const undoButton = document.createElement('button');
-      undoButton.classList.add('tool-button');
-      undoButton.textContent = "Undo";
-      undoButton.addEventListener('click', () => { undoAction(drawingCanvas); });
-      toolbar.appendChild(undoButton);
-
-      whiteboardContainer.appendChild(toolbar);
-
+      // Clear button
       const clearButton = document.createElement('button');
       clearButton.textContent = "Clear Whiteboard";
       clearButton.classList.add('clear-button');
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
+      // Grid selector
       const gridSelector = document.createElement('div');
       gridSelector.classList.add('grid-selector');
       const gridLabel = document.createElement('label');
@@ -282,9 +297,21 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
-      // Set up whiteboard drawing with eraser preview support
+      // Restore saved drawing if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
+      // Setup whiteboard drawing with preview for eraser
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Update LaTeX rendering on answer input
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
@@ -309,7 +336,7 @@
       updateQuestionNumbers();
     }
 
-    // Modified whiteboard setup accepts a preview canvas for showing the eraser outline
+    // Setup whiteboard drawing with eraser preview support
     function setupWhiteboard(canvasId, previewCanvasId) {
       const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext("2d");
@@ -344,6 +371,7 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -367,7 +395,6 @@
       }
 
       canvas.addEventListener("mousedown", (e) => {
-        // Clear any existing preview on mousedown
         previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
         if (canvas.dataset.tool === "line") {
           startX = e.offsetX;
@@ -380,7 +407,6 @@
       });
 
       canvas.addEventListener("mousemove", (e) => {
-        // If eraser tool is active and not drawing, show a dashed preview circle
         if (canvas.dataset.tool === "eraser" && !drawing) {
           previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
           previewCtx.beginPath();
@@ -485,7 +511,6 @@
     }
 
     // Sample questions
-
     createQuestion(
     "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/kvN7LkS.png' alt='Geometric Figure 1' style='max-width:100%; height:auto;'>",
     ["17.1"]
@@ -535,7 +560,6 @@ createQuestion(
     "Find the missing variable. Round to 1 decimal place. <br> <img src='https://i.imgur.com/VXPv97D.png' alt='Geometric Figure 10' style='max-width:100%; height:auto;'>",
     ["66.4"]
 );
-
 
     window.onload = function () {
       MathJax.typeset();

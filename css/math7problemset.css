@@ -37,6 +37,81 @@
 }
 
 
+   /* Floating toolbar positioned halfway between a 960px container and the right edge */
+   #floating-toolbar {
+    position: fixed;
+    top: 50%;
+    right: calc((100vw - 960px) / 4);
+    transform: translateY(-50%);
+    background-color: #f0f0f0;
+    padding: 10px;
+    z-index: 1000;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 150px;
+  }
+  /* Toolbar button styling with extra right padding for checkmark */
+  #floating-toolbar .tool-button {
+    display: block;
+    margin-bottom: 5px;
+    width: 100%;
+    position: relative;
+    padding-right: 25px;
+  }
+  /* Active tool button shows a green checkmark inside the right padding */
+  #floating-toolbar .tool-button.active::after {
+    content: "✔";
+    color: rgb(255, 255, 255);
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+  }
+  
+  /* Help Box and Banner styles */
+  #help-box {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    z-index: 1000;
+  }
+  #banner {
+    margin: 20px 0;
+    text-align: center;
+  }
+  #quiz-section {
+    margin: 0 auto;
+    max-width: 960px;
+  }
+  .question-container {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  .whiteboard-container {
+    position: relative;
+    margin-top: 10px;
+  }
+  .canvas-container {
+    position: relative;
+  }
+  canvas {
+    border: 1px solid #ccc;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  /* Print styles: hide header, help box, and toolbar for grading */
+  @media print {
+    #help-box, #floating-toolbar, #banner {
+      display: none;
+    }
+  }
+
+
 /* --------- Call-to-Action Button --------- */
 .cta-button {
   display: inline-block;
