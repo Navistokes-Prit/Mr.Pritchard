@@ -131,6 +131,7 @@
   background: var(--bg-light);
   border-radius: 5px;
   color: black;
+  
 }
 /* Right column: Questions button container */
 .unit-home .question-link {
@@ -177,7 +178,7 @@ gap: 10px; /* Space between buttons */
 
   .ctb-button {
     display: inline-block;
-    padding: 20px;
+    padding: 10px;
     background: var(--accent-color);
     color: #fff;
     font-size: 1.2em;
@@ -185,8 +186,13 @@ gap: 10px; /* Space between buttons */
     text-decoration: none;
     border-radius: 50px;
     transition: transform 0.3s ease, filter 0.3s ease;
+    margin: 5px;
   }
-  
+  .ctb-button:hover {
+    filter: brightness(0.9);
+    transform: scale(1.5);
+  }
+
   .cta-button:hover {
     filter: brightness(0.9);
     transform: scale(1.05);
