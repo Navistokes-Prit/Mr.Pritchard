@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numeracy Ninjas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            margin: 20px;
+        }
+        .column {
+            margin: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .column h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f9f9f9;
+        }
+        input {
+            width: 50px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px;
+        }
+        .feedback {
+            font-weight: bold;
+        }
+        .feedback.correct {
+            color: green;
+        }
+        .feedback.incorrect {
+            color: red;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #FF5722;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .score {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Numeracy Ninjas</h1>
+    <div class="container">
+        <div class="column" id="mentalStrategies">
+            <h2>Mental Strategies</h2>
+            <table>
+                <tbody id="mentalQuestions"></tbody>
+            </table>
+        </div>
+        <div class="column" id="timetables">
+            <h2>Timetables</h2>
+            <table>
+                <tbody id="timetableQuestions"></tbody>
+            </table>
+        </div>
+    </div>
+    <button onclick="generateQuestions()">Generate New Questions</button>
+    <button onclick="checkAnswers()">Check Answers</button>
+    <div class="score" id="scoreDisplay"></div>
+
+    <script>
+        let mentalAnswers = [];
+        let timetableAnswers = [];
+
+        function generateRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function convertTo24Hour(hour, minute, period) {
+            if (period === "am" && hour === 12) {
+                hour = 0;
+            } else if (period === "pm" && hour !== 12) {
+                hour += 12;
+            }
+            return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        }
+
+        function calculateMinutesBetween(startHour, startMinute, startPeriod, endHour, endMinute, endPeriod) {
+            const start24 = convertTo24Hour(startHour, startMinute, startPeriod);
+            const end24 = convertTo24Hour(endHour, endMinute, endPeriod);
+
+            const [startH, startM] = start24.split(':').map(Number);
+            const [endH, endM] = end24.split(':').map(Number);
+
+            const startTotalMinutes = startH * 60 + startM;
+            const endTotalMinutes = endH * 60 + endM;
+
+            // If end time is on the next day
+            if (endTotalMinutes < startTotalMinutes) {
+                return (24 * 60 - startTotalMinutes) + endTotalMinutes;
+            } else {
+                return endTotalMinutes - startTotalMinutes;
+            }
+        }
+
+        function generateAlgebraQuestions() {
+            const questions = [];
+            const answers = [];
+
+            for (let i = 0; i < 2; i++) {
+                const boxValue = generateRandomInt(1, 20);
+                const constant = generateRandomInt(1, 20);
+                const operation = Math.random() > 0.5 ? '+' : '-';
+
+                if (operation === '+') {
+                    questions.push(`${constant} + □ = ${constant + boxValue}`);
+                    answers.push(boxValue);
+                } else {
+                    questions.push(`${constant} - □ = ${constant - boxValue}`);
+                    answers.push(boxValue);
+                }
+            }
+
+            return { questions, answers };
+        }
+
+        function generateClockQuestions() {
+            const randomHour1 = generateRandomInt(1, 12);
+            const randomMinute1 = generateRandomInt(0, 59);
+            const period1 = Math.random() > 0.5 ? "am" : "pm";
+
+            // Ensure end time is different
+            const randomHour2 = generateRandomInt(1, 12);
+            const randomMinute2 = generateRandomInt(0, 59);
+            const period2 = Math.random() > 0.5 ? "am" : "pm";
+
+            // Question 9: Convert to 24-hour clock format
+            const question1 = `Write ${randomHour1}:${randomMinute1.toString().padStart(2, '0')} ${period1} in 24-hour clock format`;
+            const answer1 = convertTo24Hour(randomHour1, randomMinute1, period1);
+
+            // Question 10: Minutes between times
+            const question2 = `From ${randomHour1}:${randomMinute1.toString().padStart(2, '0')} ${period1}, how many minutes until ${randomHour2}:${randomMinute2.toString().padStart(2, '0')} ${period2}?`;
+            const answer2 = calculateMinutesBetween(randomHour1, randomMinute1, period1, randomHour2, randomMinute2, period2);
+
+            return {
+                questions: [question1, question2],
+                answers: [answer1, answer2]
+            };
+        }
+
+        function generateMentalStrategiesQuestions() {
+            const questions = [];
+            mentalAnswers = [];
+
+            // Generate 6 arithmetic questions
+            for (let i = 1; i <= 6; i++) {
+                const num1 = generateRandomInt(1, 100);
+                const num2 = generateRandomInt(1, 100);
+                const operation = Math.random() > 0.5 ? '+' : '-';
+                questions.push(`${num1} ${operation} ${num2}`);
+                mentalAnswers.push(operation === '+' ? num1 + num2 : num1 - num2);
+            }
+
+            // Add 2 algebra questions
+            const algebra = generateAlgebraQuestions();
+            questions.push(...algebra.questions);
+            mentalAnswers.push(...algebra.answers);
+
+            // Add 2 clock-related questions
+            const clockQuestions = generateClockQuestions();
+            questions.push(...clockQuestions.questions);
+            mentalAnswers.push(...clockQuestions.answers);
+
+            return questions;
+        }
+
+        function generateTimetableQuestions() {
+            const questions = [];
+            timetableAnswers = [];
+            for (let i = 1; i <= 10; i++) {
+                const num1 = generateRandomInt(1, 15);
+                const num2 = generateRandomInt(1, 15);
+                const operation = Math.random() > 0.5 ? '×' : '÷';
+                if (operation === '×') {
+                    questions.push(`${num1} × ${num2}`);
+                    timetableAnswers.push(num1 * num2);
+                } else {
+                    const result = num1 * num2;
+                    questions.push(`${result} ÷ ${num2}`);
+                    timetableAnswers.push(num1);
+                }
+            }
+            return questions;
+        }
+
+        function populateTable(tableId, questions) {
+            const table = document.getElementById(tableId);
+            table.innerHTML = '';
+            questions.forEach((question, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}. ${question}</td>
+                    <td><input type="text" data-question-index="${index}"><span class="feedback" id="feedback-${tableId}-${index}"></span></td>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        function generateQuestions() {
+            const mentalQuestions = generateMentalStrategiesQuestions();
+            const timetableQuestions = generateTimetableQuestions();
+
+            populateTable('mentalQuestions', mentalQuestions);
+            populateTable('timetableQuestions', timetableQuestions);
+
+            // Clear score display
+            document.getElementById('scoreDisplay').textContent = '';
+        }
+
+        function checkAnswers() {
+            let correctCount = 0;
+            const mentalInputs = document.querySelectorAll('#mentalQuestions input');
+            const timetableInputs = document.querySelectorAll('#timetableQuestions input');
+
+            // Check Mental Strategies answers
+            mentalInputs.forEach((input, index) => {
+                const userAnswer = input.value.trim();
+                const correctAnswer = mentalAnswers[index].toString();
+                const feedback = document.getElementById(`feedback-mentalQuestions-${index}`);
+                if (userAnswer === correctAnswer) {
+                    feedback.textContent = ' Correct';
+                    feedback.className = 'feedback correct';
+                    correctCount++;
+                } else {
+                    feedback.textContent = ' Incorrect';
+                    feedback.className = 'feedback incorrect';
+                }
+            });
+
+            // Check Timetables answers
+            timetableInputs.forEach((input, index) => {
+                const userAnswer = parseInt(input.value);
+                const feedback = document.getElementById(`feedback-timetableQuestions-${index}`);
+                if (userAnswer === timetableAnswers[index]) {
+                    feedback.textContent = ' Correct';
+                    feedback.className = 'feedback correct';
+                    correctCount++;
+                } else {
+                    feedback.textContent = ' Incorrect';
+                    feedback.className = 'feedback incorrect';
+                }
+            });
+
+            // Display score
+            const scorePercentage = Math.round((correctCount / 20) * 100);
+            document.getElementById('scoreDisplay').textContent = `You got ${correctCount} out of 20 (${scorePercentage}%) correct.`;
+        }
+
+        // Generate initial questions on page load
+        generateQuestions();
+    </script>
+</body>
+</html>

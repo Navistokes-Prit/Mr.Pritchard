@@ -7,6 +7,31 @@
     box-sizing: border-box;
   }
   
+
+  .container3{
+
+    max-width: 960px; /* Set a maximum width */
+    margin: 0 auto; /* Center the container horizontally */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px;
+  }
+
+  .column3 {
+    flex: 1;
+    min-width: 250px; /* Ensures columns shrink properly on smaller screens */
+
+  }
+  /* Style for the images */
+  .column3 img {
+    width: 35%;
+    height: auto;
+    display: block;
+    margin: 0 auto;      /* Centers the block element horizontally */
+
+  }
+
   body {
     font-family: 'Roboto', sans-serif;
     line-height: 1.6;
@@ -76,7 +101,7 @@
   .hero {
     position: relative;
     text-align: center;
-    padding: 120px 20px;
+    padding: 80px 20px;
     overflow: hidden;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     background-size: 400% 400%;
