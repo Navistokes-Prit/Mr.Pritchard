@@ -28,7 +28,6 @@
   <div id="banner">
     <h2>MATH 7</h2>
     <a class="cta-button" href="../Unit6_equations.html">Back</a>
-
   </div>
 
   <!-- Quiz Section -->
@@ -104,6 +103,8 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      // Update saved drawing after undo
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
     // Create a new question with a whiteboard that includes a preview layer for the eraser
@@ -252,6 +253,7 @@
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
@@ -282,9 +284,21 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
+      // Restore saved drawing for this whiteboard if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
       // Set up whiteboard drawing with eraser preview support
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Update LaTeX rendering on answer input (without saving the answer)
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
@@ -344,6 +358,8 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        // Save the current drawing to localStorage
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -580,10 +596,6 @@ createQuestion(
     "A recycling center pays \\(x\\) dollars per bottle. Recycling 10 bottles earns \\$20.<br><br> (a) Write an equation to find \\(x\\).<br><br> (b) How much will someone earn if they recycle 15 bottles?",
     ["10x=20,30"]
 );
-
-
-
-
     window.onload = function () {
       MathJax.typeset();
     };
