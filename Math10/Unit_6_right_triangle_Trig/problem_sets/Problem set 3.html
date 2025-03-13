@@ -28,7 +28,6 @@
   <div id="banner">
     <h2>MATH 10</h2>
     <a class="cta-button" href="../Unit_6_right_triangle_trig.html">Back</a>
-
   </div>
 
   <!-- Quiz Section -->
@@ -104,6 +103,8 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      // Update saved drawing after undo
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
     // Create a new question with a whiteboard that includes a preview layer for the eraser
@@ -252,6 +253,7 @@
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
@@ -282,13 +284,34 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
+      // Restore saved answer if exists
+      const savedAnswer = localStorage.getItem(`answer-box-${currentIndex}`);
+      if (savedAnswer) {
+        inputBox.value = savedAnswer;
+        latexOutput.innerHTML = `$$${savedAnswer}$$`;
+        MathJax.typeset();
+      }
+
+      // Restore saved drawing for this whiteboard if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
       // Set up whiteboard drawing with eraser preview support
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Save answer on input
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
         MathJax.typeset();
+        localStorage.setItem(`answer-box-${currentIndex}`, inputBox.value);
       }, 300));
 
       inputBox.addEventListener('keydown', function (event) {
@@ -344,6 +367,8 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        // Save the current drawing to localStorage
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -540,7 +565,6 @@ createQuestion(
     "A roller coaster reaches a maximum height of 50 meters above the ground. At first, a person on the ground measures a 40° angle of elevation to this highest point. Later, the rider at the top sees the person on the ground at a 12° angle of depression. How far did the observer move between the two measurements?",
     ["175.6"]
 );
-
 
 createQuestion(
     "A person standing near the base of a tall building measures the angle of elevation from the ground to the top of the building as \\( 42^{\\circ} \\). The person then walks 400 feet straight back and measures the new angle of elevation to be \\( 22^{\\circ} \\). How tall is the building?",
