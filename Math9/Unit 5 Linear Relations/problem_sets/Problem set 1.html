@@ -11,8 +11,20 @@
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <link rel="stylesheet" href="../../../css/math9problemset.css" />
-  
- 
+
+  <style>
+    /* Make the toolbar fixed and style it */
+    #floating-toolbar {
+      position: fixed;
+      top: 500px;
+      right: 10px;
+      z-index: 1000;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: move; /* Indicate that the element is draggable */
+    }
+  </style>
 </head>
 <body>
   <!-- Help Box -->
@@ -62,6 +74,34 @@
   </div>
 
   <script>
+    // Draggable Floating Toolbar Code
+    (function() {
+      const toolbar = document.getElementById('floating-toolbar');
+      let offsetX = 0, offsetY = 0;
+      let isDragging = false;
+
+      toolbar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        // Calculate the initial offset between mouse and toolbar top-left
+        offsetX = e.clientX - toolbar.offsetLeft;
+        offsetY = e.clientY - toolbar.offsetTop;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          // Update the toolbar's position following the cursor
+          toolbar.style.left = (e.clientX - offsetX) + 'px';
+          toolbar.style.top = (e.clientY - offsetY) + 'px';
+          // Remove right property to prevent conflicts
+          toolbar.style.right = 'auto';
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+    })();
+
     // Help Box Toggle
     const helpBox = document.getElementById('help-box');
     const toggleButton = document.getElementById('help-box-toggle');
