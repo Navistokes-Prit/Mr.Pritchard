@@ -73,8 +73,8 @@
     color: #333;
   }
   body.grade9 {
-    --primary-color: #2e7d32;    /* Earthy Green */
-    --secondary-color: #c3c91a;  /* A complementary green */
+    --primary-color: #2413c0;    /* Earthy Green */
+    --secondary-color: #e01c15;  /* A complementary green */
     --accent-color: #313432;     /* Deep Red accent */
     --bg-dark: #313432;
     --bg-light: #fafafa;
