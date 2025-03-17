@@ -3,13 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Math Quiz with Whiteboard Tools</title>
+  <title>Math Quiz with Floating Whiteboard Tools</title>
   
   <!-- MathJax for LaTeX -->
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script id="MathJax-script" async 
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
   <link rel="stylesheet" href="../../../css/math9problemset.css" />
-  
+
+  <style>
+    /* Make the toolbar fixed and style it */
+    #floating-toolbar {
+      position: fixed;
+      top: 500px;
+      right: 10px;
+      z-index: 1000;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: move; /* Indicate that the element is draggable */
+    }
+  </style>
 </head>
 <body>
   <!-- Help Box -->
@@ -22,13 +37,33 @@
     <p><strong>NthRoots:</strong> <code>\sqrt[index]{radicand}</code></p>
     <p><strong>Multiplication:</strong> <code>\cdot</code></p>
     <p><strong>Repeating:</strong> <code>\overline{number}</code></p>
+    <p><strong>Less than or equal to:</strong> <code>\leq</code></p>
+    <p><strong>Greater than or equal to:</strong> <code>\geq</code></p>
+
+
+  </div>
+
+  <!-- Floating Toolbar -->
+  <div id="floating-toolbar">
+    <button class="tool-button" data-tool="pencil" data-color="black" 
+      style="background-color: black; color: white;">Black</button>
+    <button class="tool-button" data-tool="pencil" data-color="red" 
+      style="background-color: red; color: white;">Red</button>
+    <button class="tool-button" data-tool="pencil" data-color="blue" 
+      style="background-color: blue; color: white;">Blue</button>
+    <button class="tool-button" data-tool="pencil" data-color="green" 
+      style="background-color: green; color: white;">Green</button>
+    <button class="tool-button" data-tool="eraser">Eraser Tool</button>
+    <button class="tool-button" data-tool="line">Line Tool</button>
+    <label for="pencil-size">Pencil and Eraser Size:</label>
+    <input type="range" id="pencil-size" min="1" max="20" value="2">
+    <button class="tool-button" id="undo-btn">Undo</button>
   </div>
 
   <!-- Banner -->
   <div id="banner">
     <h2>MATH 9</h2>
-    <a class="cta-button" href="../Unit 5 linear relations.html">Back</a>
-
+    <a class="cta-button" href="../Unit 6 Linear inequalities.html">Back</a>
   </div>
 
   <!-- Quiz Section -->
@@ -43,6 +78,35 @@
   </div>
 
   <script>
+    // Draggable Floating Toolbar Code
+    (function() {
+      const toolbar = document.getElementById('floating-toolbar');
+      let offsetX = 0, offsetY = 0;
+      let isDragging = false;
+
+      toolbar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        // Calculate the initial offset between mouse and toolbar top-left
+        offsetX = e.clientX - toolbar.offsetLeft;
+        offsetY = e.clientY - toolbar.offsetTop;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          // Update the toolbar's position following the cursor
+          toolbar.style.left = (e.clientX - offsetX) + 'px';
+          toolbar.style.top = (e.clientY - offsetY) + 'px';
+          // Remove right property to prevent conflicts
+          toolbar.style.right = 'auto';
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+    })();
+
+    // Help Box Toggle
     const helpBox = document.getElementById('help-box');
     const toggleButton = document.getElementById('help-box-toggle');
     toggleButton.addEventListener('click', () => {
@@ -57,6 +121,52 @@
     let correctAnswers = 0;
     let questionIndex = 0;
     let questions = [];
+
+    // Global active canvas variable for the floating toolbar
+    let activeCanvas = null;
+
+    // When a whiteboard canvas is clicked, mark it as active
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'CANVAS' && e.target.classList.contains('drawing-canvas')) {
+        activeCanvas = e.target;
+      }
+    });
+
+    // Floating toolbar button events (with active tool checkmark)
+    document.querySelectorAll('#floating-toolbar .tool-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active state from all toolbar buttons (except for undo)
+        if (button.id !== 'undo-btn') {
+          document.querySelectorAll('#floating-toolbar .tool-button')
+                  .forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+        }
+        
+        if (!activeCanvas) {
+          alert('Please click on a whiteboard to activate it.');
+          return;
+        }
+        const tool = button.getAttribute('data-tool');
+        if (tool) {
+          activeCanvas.dataset.tool = tool;
+          // Set color if specified
+          const color = button.getAttribute('data-color');
+          if (color) {
+            activeCanvas.dataset.color = color;
+          }
+        }
+        if (button.id === 'undo-btn') {
+          undoAction(activeCanvas);
+        }
+      });
+    });
+
+    // Update pencil size from the global slider
+    document.getElementById('pencil-size').addEventListener('input', (e) => {
+      if (activeCanvas) {
+        activeCanvas.dataset.pencilSize = e.target.value;
+      }
+    });
 
     // Debounce helper to reduce MathJax rendering frequency
     function debounce(func, delay) {
@@ -104,9 +214,10 @@
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
+      localStorage.setItem(canvas.id, canvas.toDataURL());
     }
 
-    // Create a new question with a whiteboard that includes a preview layer for the eraser
+    // Create a new question with a whiteboard (no individual toolbar)
     function createQuestion(questionText, correctAnswersList) {
       let currentIndex = questionIndex++;
       const container = document.createElement('div');
@@ -117,10 +228,10 @@
       const questionContent = document.createElement('div');
       questionContent.classList.add('question-content');
 
-      const question = document.createElement('div');
-      question.classList.add('question');
-      question.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
-      questionContent.appendChild(question);
+      const questionElem = document.createElement('div');
+      questionElem.classList.add('question');
+      questionElem.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(questionElem);
 
       const inputBox = document.createElement('input');
       inputBox.type = 'text';
@@ -159,7 +270,7 @@
       const canvasContainer = document.createElement('div');
       canvasContainer.classList.add('canvas-container');
 
-      // Grid canvas fills the whole whiteboard (900x600)
+      // Grid canvas (900x600)
       const gridCanvas = document.createElement('canvas');
       gridCanvas.id = `grid-${currentIndex}`;
       gridCanvas.width = 900;
@@ -175,6 +286,9 @@
       drawingCanvas.height = 600;
       drawingCanvas.classList.add('drawing-canvas');
       drawingCanvas.undoStack = [];
+      drawingCanvas.dataset.tool = "pencil";
+      drawingCanvas.dataset.color = "black";
+      drawingCanvas.dataset.pencilSize = "2";
       canvasContainer.appendChild(drawingCanvas);
 
       // Preview canvas for eraser (on top)
@@ -188,73 +302,18 @@
 
       whiteboardContainer.appendChild(canvasContainer);
 
-      // Toolbar
-      const toolbar = document.createElement('div');
-      toolbar.classList.add('tool-buttons');
-
-      const colors = ["black", "red", "blue", "green"];
-      colors.forEach(color => {
-        const colorButton = document.createElement('button');
-        colorButton.classList.add('tool-button');
-        colorButton.style.backgroundColor = color;
-        colorButton.title = color;
-        colorButton.addEventListener("click", () => {
-          drawingCanvas.dataset.tool = "pencil";
-          drawingCanvas.dataset.color = color;
-        });
-        toolbar.appendChild(colorButton);
-      });
-
-      const eraserToolButton = document.createElement('button');
-      eraserToolButton.classList.add('tool-button', 'eraser-button');
-      eraserToolButton.textContent = "Eraser Tool";
-      eraserToolButton.addEventListener("click", () => {
-        drawingCanvas.dataset.tool = "eraser";
-      });
-      toolbar.appendChild(eraserToolButton);
-
-      const lineToolButton = document.createElement('button');
-      lineToolButton.classList.add('tool-button');
-      lineToolButton.textContent = "Line Tool";
-      lineToolButton.addEventListener("click", () => {
-        drawingCanvas.dataset.tool = "line";
-      });
-      toolbar.appendChild(lineToolButton);
-
-      const pencilSizeLabel = document.createElement('label');
-      pencilSizeLabel.setAttribute("for", `pencil-size-${currentIndex}`);
-      pencilSizeLabel.textContent = "Pencil Size:";
-      toolbar.appendChild(pencilSizeLabel);
-
-      const pencilSizeSlider = document.createElement('input');
-      pencilSizeSlider.type = 'range';
-      pencilSizeSlider.id = `pencil-size-${currentIndex}`;
-      pencilSizeSlider.min = "1";
-      pencilSizeSlider.max = "10";
-      pencilSizeSlider.value = "2";  // Default thickness
-      pencilSizeSlider.style.marginLeft = "5px";
-      pencilSizeSlider.addEventListener('input', () => {
-        drawingCanvas.dataset.pencilSize = pencilSizeSlider.value;
-      });
-      toolbar.appendChild(pencilSizeSlider);
-
-      const undoButton = document.createElement('button');
-      undoButton.classList.add('tool-button');
-      undoButton.textContent = "Undo";
-      undoButton.addEventListener('click', () => { undoAction(drawingCanvas); });
-      toolbar.appendChild(undoButton);
-
-      whiteboardContainer.appendChild(toolbar);
-
+      // Clear button
       const clearButton = document.createElement('button');
       clearButton.textContent = "Clear Whiteboard";
       clearButton.classList.add('clear-button');
       clearButton.onclick = function () {
         clearWhiteboard(`whiteboard-${currentIndex}`);
         drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
       };
       whiteboardContainer.appendChild(clearButton);
 
+      // Grid selector
       const gridSelector = document.createElement('div');
       gridSelector.classList.add('grid-selector');
       const gridLabel = document.createElement('label');
@@ -282,9 +341,21 @@
       container.appendChild(whiteboardContainer);
       quizSection.appendChild(container);
 
-      // Set up whiteboard drawing with eraser preview support
+      // Restore saved drawing if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
+      // Setup whiteboard drawing with preview for eraser
       setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
 
+      // Update LaTeX rendering on answer input
       inputBox.addEventListener('input', debounce(function () {
         const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
         latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
@@ -309,7 +380,7 @@
       updateQuestionNumbers();
     }
 
-    // Modified whiteboard setup accepts a preview canvas for showing the eraser outline
+    // Setup whiteboard drawing with eraser preview support
     function setupWhiteboard(canvasId, previewCanvasId) {
       const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext("2d");
@@ -344,6 +415,7 @@
 
       function finalizeStroke() {
         canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        localStorage.setItem(canvas.id, canvas.toDataURL());
       }
 
       function stopDrawing(x, y) {
@@ -367,7 +439,6 @@
       }
 
       canvas.addEventListener("mousedown", (e) => {
-        // Clear any existing preview on mousedown
         previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
         if (canvas.dataset.tool === "line") {
           startX = e.offsetX;
@@ -380,7 +451,6 @@
       });
 
       canvas.addEventListener("mousemove", (e) => {
-        // If eraser tool is active and not drawing, show a dashed preview circle
         if (canvas.dataset.tool === "eraser" && !drawing) {
           previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
           previewCtx.beginPath();
@@ -485,72 +555,25 @@
     }
 
     // Sample questions
+    createQuestion("Solve the following inequality and then graph the solution on a number line: \\( \\frac{x - 3}{2} < \\frac{2x + 1}{3} \\)", ["x>-11"]);
 
-    createQuestion(
-    "A damsel is in distress and is being held captive in a tower. Her knight in shining armor is on the ground below with a ladder. When the knight stands 15 feet from the base of the tower and looks up at his precious damsel, the angle of elevation to her window is 60 degrees. How long does the ladder have to be?",
-    ["30"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 5 - 2(3x + 4) > 4 - (x - 2) \\)", ["x<-\\frac{9}{5}","x<\\frac{-9}{5}"]);
 
-createQuestion(
-    "You are 200 yards from a river. Rather than walking directly to the river, you walk 400 yards along a straight path to the river’s edge. Find the acute angle between the path and the river’s edge.",
-    ["30"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 4(2 - x) + 3(x + 1) \\leq 5x - 2 \\)", ["x\\geq \\frac{13}{6}"]);
 
-createQuestion(
-    "A 12-meter flagpole casts a 9-meter shadow. Find the angle of elevation of the sun.",
-    ["53.1"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 7 - 3(2x - 1) > 2(x + 4) \\)", ["x<\\frac{1}{4}"]);
 
-createQuestion(
-    "Suppose you’re flying a kite, and it gets caught at the top of a tree. You’ve let out all 100 feet of string for the kite, and the angle that the string makes with the ground is 75 degrees. Instead of worrying about how to get your kite back, you wonder: “How tall is that tree?”",
-    ["96.6"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( \\frac{4 - x}{2} \\leq \\frac{x + 6}{3} \\)", ["x\\geq 0"]);
 
-createQuestion(
-    "A submersible traveling at a depth of 250 feet dives at an angle of \\( 15^{\\circ} \\) with respect to a line parallel to the water’s surface. It travels a horizontal distance of 1500 feet during the dive. What is the depth of the submersible after the dive? (to the nearest whole number)",
-    ["652"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 3(2x - 1) - 4(x + 3) > 5x - 10 \\)", ["x < -\\frac{5}{3}","x<\\frac{-5}{3}"]);
 
-createQuestion(
-    "A fire department’s longest ladder is 110 feet long, and the safety regulation states that they can use it for rescues up to 100 feet off the ground. What is the maximum safe angle of elevation for the rescue ladder?",
-    ["65.4"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 2 - 3\\left(1 - \\frac{x}{2}\\right) < 4x - 3 \\)", ["x > \\frac{4}{5}"]);
 
-createQuestion(
-    "Brothers Bob and Tom Katz buy a tent that has a center pole 6.25 feet high. If the sides of the tent are supposed to make a \\( 50^{\\circ} \\) angle with the ground, how wide is the tent?",
-    ["10.5"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( -5(2x - 3) + 4x \\geq 3(1 - x) + 8 \\)", ["x \\leq \\frac{4}{3}"]);
 
-createQuestion(
-    "A helicopter is hovering at a constant altitude of 900 meters. The pilot spots the top of a 60-meter-tall radio tower at an angle of depression of 8°. Determine the horizontal distance between the helicopter and the tower.",
-    ["5976.9"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 6 - \\frac{2x + 5}{3} < x - 1 \\)", ["x>\\frac{16}{5}"]);
 
-createQuestion(
-    "A lighthouse stands on a rocky cliff, making the top of the lighthouse 85 meters above sea level. The keeper at the top spots a fishing boat at an angle of depression of 10°, while a person standing on the shore at sea level between the boat and lighthouse observes the top of the lighthouse at an angle of elevation of 20°. Find the total distance from the fishing boat to the person on the shore.",
-    ["248.5"]
-);
-
-createQuestion(
-    "A drone is hovering 250 meters above the ground. One observer sees the drone at a 28° angle of elevation, while another observer on the opposite side (at the same ground level) sees it at a 22° angle of elevation. Determine how far apart the two observers are on the ground.",
-    ["1089.0","1089"]
-);
-
-createQuestion(
-    "A roller coaster reaches a maximum height of 50 meters above the ground. At first, a person on the ground measures a 40° angle of elevation to this highest point. Later, the rider at the top sees the person on the ground at a 12° angle of depression. How far did the observer move between the two measurements?",
-    ["175.6"]
-);
-
-
-createQuestion(
-    "A person standing near the base of a tall building measures the angle of elevation from the ground to the top of the building as \\( 42^{\\circ} \\). The person then walks 400 feet straight back and measures the new angle of elevation to be \\( 22^{\\circ} \\). How tall is the building?",
-    ["293.2"]
-);
-
-createQuestion(
-    "A hot air balloon is floating 300m above the ground. It is attached by 2 wires on either side to stop it flying away. If one wire has an angle of elevation of \\(25^{\\circ}\\) and the other an angle of \\(40^{\\circ}\\). What is the total length of wire needed?",
-    ["1176.6"]
-);
+createQuestion("Solve the following inequality and then graph the solution on a number line: \\( 2(x - 1) - 3(2 - x) \\geq 4x + 1 \\)", ["x \\geq 9"]);
 
     window.onload = function () {
       MathJax.typeset();
