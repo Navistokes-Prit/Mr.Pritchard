@@ -135,14 +135,19 @@
 }
 /* Right column: Questions button container */
 .unit-home .question-link {
-  width: 300px;
+  width: 500px;
   display: flex;
+  flex-direction: row;       /* Arrange items in a row */
+  flex-wrap: wrap;           /* Allow items to wrap to a new line */
+  gap: 10px;                 /* Space between buttons */
   justify-content: center;
   align-items: center;
-flex-direction: column; /* Stack problem sets vertically */
-gap: 10px; /* Space between buttons */
 }
 
+/* Assuming each button is a child element, for example a button element */
+.unit-home .question-link button {
+  flex: 0 0 calc((100% - 20px) / 3); /* 100% minus total gap for 3 buttons per row */
+}
 
 
   @keyframes gradientShift {
