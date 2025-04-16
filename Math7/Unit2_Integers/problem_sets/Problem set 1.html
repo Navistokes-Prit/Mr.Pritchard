@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Quiz with Floating Whiteboard Tools</title>
+  
+  <!-- MathJax for LaTeX -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async 
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <link rel="stylesheet" href="../../../css/math7problemset.css" />
+
+  <style>
+    /* Make the toolbar fixed and style it */
+    #floating-toolbar {
+      position: fixed;
+      top: 500px;
+      right: 10px;
+      z-index: 1000;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: move; /* Indicate that the element is draggable */
+    }
+  </style>
+</head>
+<body>
+  <!-- Help Box -->
+  <div id="help-box">
+    <button id="help-box-toggle">Minimize</button>
+    <h3>How to Type</h3>
+    <p><strong>Fractions:</strong> <code>\frac{numerator}{denominator}</code></p>
+    <p><strong>Exponents:</strong> <code>x^{2}</code> or <code>(xy)^{3}</code></p>
+    <p><strong>Square Roots:</strong> <code>\sqrt{radicand}</code></p>
+    <p><strong>NthRoots:</strong> <code>\sqrt[index]{radicand}</code></p>
+    <p><strong>Multiplication:</strong> <code>\cdot</code></p>
+    <p><strong>Repeating:</strong> <code>\overline{number}</code></p>
+  </div>
+
+  <!-- Floating Toolbar -->
+  <div id="floating-toolbar">
+    <button class="tool-button" data-tool="pencil" data-color="black" 
+      style="background-color: black; color: white;">Black</button>
+    <button class="tool-button" data-tool="pencil" data-color="red" 
+      style="background-color: red; color: white;">Red</button>
+    <button class="tool-button" data-tool="pencil" data-color="blue" 
+      style="background-color: blue; color: white;">Blue</button>
+    <button class="tool-button" data-tool="pencil" data-color="green" 
+      style="background-color: green; color: white;">Green</button>
+    <button class="tool-button" data-tool="eraser">Eraser Tool</button>
+    <button class="tool-button" data-tool="line">Line Tool</button>
+    <label for="pencil-size">Pencil and Eraser Size:</label>
+    <input type="range" id="pencil-size" min="1" max="20" value="2">
+    <button class="tool-button" id="undo-btn">Undo</button>
+  </div>
+
+  <!-- Banner -->
+  <div id="banner">
+    <h2>MATH 7</h2>
+    <a class="cta-button" href="../Unit2_integers.html">Back</a>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quiz-section">
+    <!-- Questions will be added dynamically here -->
+  </div>
+
+  <!-- Score Section -->
+  <div id="score-section">
+    <p>Correct Answers: <span class="score" id="correct-score">0</span>/<span id="total-questions">0</span></p>
+    <p>Percentage: <span class="score" id="percentage-score">0%</span></p>
+  </div>
+
+  <script>
+    // Draggable Floating Toolbar Code
+    (function() {
+      const toolbar = document.getElementById('floating-toolbar');
+      let offsetX = 0, offsetY = 0;
+      let isDragging = false;
+
+      toolbar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        // Calculate the initial offset between mouse and toolbar top-left
+        offsetX = e.clientX - toolbar.offsetLeft;
+        offsetY = e.clientY - toolbar.offsetTop;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          // Update the toolbar's position following the cursor
+          toolbar.style.left = (e.clientX - offsetX) + 'px';
+          toolbar.style.top = (e.clientY - offsetY) + 'px';
+          // Remove right property to prevent conflicts
+          toolbar.style.right = 'auto';
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+    })();
+
+    // Help Box Toggle
+    const helpBox = document.getElementById('help-box');
+    const toggleButton = document.getElementById('help-box-toggle');
+    toggleButton.addEventListener('click', () => {
+      helpBox.classList.toggle('minimized');
+      toggleButton.textContent = helpBox.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+    });
+
+    const quizSection = document.getElementById('quiz-section');
+    const correctScoreElement = document.getElementById('correct-score');
+    const totalQuestionsElement = document.getElementById('total-questions');
+    const percentageScoreElement = document.getElementById('percentage-score');
+    let correctAnswers = 0;
+    let questionIndex = 0;
+    let questions = [];
+
+    // Global active canvas variable for the floating toolbar
+    let activeCanvas = null;
+
+    // When a whiteboard canvas is clicked, mark it as active
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'CANVAS' && e.target.classList.contains('drawing-canvas')) {
+        activeCanvas = e.target;
+      }
+    });
+
+    // Floating toolbar button events (with active tool checkmark)
+    document.querySelectorAll('#floating-toolbar .tool-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active state from all toolbar buttons (except for undo)
+        if (button.id !== 'undo-btn') {
+          document.querySelectorAll('#floating-toolbar .tool-button')
+                  .forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+        }
+        
+        if (!activeCanvas) {
+          alert('Please click on a whiteboard to activate it.');
+          return;
+        }
+        const tool = button.getAttribute('data-tool');
+        if (tool) {
+          activeCanvas.dataset.tool = tool;
+          // Set color if specified
+          const color = button.getAttribute('data-color');
+          if (color) {
+            activeCanvas.dataset.color = color;
+          }
+        }
+        if (button.id === 'undo-btn') {
+          undoAction(activeCanvas);
+        }
+      });
+    });
+
+    // Update pencil size from the global slider
+    document.getElementById('pencil-size').addEventListener('input', (e) => {
+      if (activeCanvas) {
+        activeCanvas.dataset.pencilSize = e.target.value;
+      }
+    });
+
+    // Debounce helper to reduce MathJax rendering frequency
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => { func.apply(this, args); }, delay);
+      };
+    }
+
+    // Draw grid lines over the entire canvas (900x600)
+    function drawGrid(canvasId, gridSize) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function clearGrid(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function undoAction(canvas) {
+      if (!canvas.undoStack || canvas.undoStack.length === 0) return;
+      canvas.undoStack.pop();
+      const ctx = canvas.getContext("2d");
+      if (canvas.undoStack.length > 0) {
+        const previousState = canvas.undoStack[canvas.undoStack.length - 1];
+        ctx.putImageData(previousState, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      localStorage.setItem(canvas.id, canvas.toDataURL());
+    }
+
+    // Create a new question with a whiteboard (no individual toolbar)
+    function createQuestion(questionText, correctAnswersList) {
+      let currentIndex = questionIndex++;
+      const container = document.createElement('div');
+      container.classList.add('question-container');
+      container.id = `question${currentIndex}`;
+
+      // Question content (text, input, submit, etc.)
+      const questionContent = document.createElement('div');
+      questionContent.classList.add('question-content');
+
+      const questionElem = document.createElement('div');
+      questionElem.classList.add('question');
+      questionElem.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(questionElem);
+
+      const inputBox = document.createElement('input');
+      inputBox.type = 'text';
+      inputBox.classList.add('answer-box');
+      inputBox.id = `answer-box-${currentIndex}`;
+      inputBox.placeholder = "Your answer";
+      questionContent.appendChild(inputBox);
+
+      const latexOutput = document.createElement('div');
+      latexOutput.classList.add('answer-latex');
+      latexOutput.id = `answer-latex-${currentIndex}`;
+      questionContent.appendChild(latexOutput);
+
+      const submitButton = document.createElement('button');
+      submitButton.classList.add('submit-button');
+      submitButton.textContent = "Submit";
+      submitButton.onclick = function () { checkAnswer(currentIndex); };
+      questionContent.appendChild(submitButton);
+
+      const feedback = document.createElement('div');
+      feedback.classList.add('feedback');
+      feedback.id = `feedback-${currentIndex}`;
+      questionContent.appendChild(feedback);
+
+      const attemptCounter = document.createElement('div');
+      attemptCounter.classList.add('attempt-counter');
+      attemptCounter.id = `attempt-counter-${currentIndex}`;
+      attemptCounter.textContent = `Attempts: 0`;
+      questionContent.appendChild(attemptCounter);
+
+      container.appendChild(questionContent);
+
+      // Whiteboard container with layered canvases: grid, drawing, and preview (for eraser)
+      const whiteboardContainer = document.createElement('div');
+      whiteboardContainer.classList.add('whiteboard-container');
+      const canvasContainer = document.createElement('div');
+      canvasContainer.classList.add('canvas-container');
+
+      // Grid canvas (900x600)
+      const gridCanvas = document.createElement('canvas');
+      gridCanvas.id = `grid-${currentIndex}`;
+      gridCanvas.width = 900;
+      gridCanvas.height = 600;
+      gridCanvas.classList.add('grid-canvas');
+      gridCanvas.style.pointerEvents = "none";
+      canvasContainer.appendChild(gridCanvas);
+
+      // Drawing canvas
+      const drawingCanvas = document.createElement('canvas');
+      drawingCanvas.id = `whiteboard-${currentIndex}`;
+      drawingCanvas.width = 900;
+      drawingCanvas.height = 600;
+      drawingCanvas.classList.add('drawing-canvas');
+      drawingCanvas.undoStack = [];
+      drawingCanvas.dataset.tool = "pencil";
+      drawingCanvas.dataset.color = "black";
+      drawingCanvas.dataset.pencilSize = "2";
+      canvasContainer.appendChild(drawingCanvas);
+
+      // Preview canvas for eraser (on top)
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.id = `preview-${currentIndex}`;
+      previewCanvas.width = 900;
+      previewCanvas.height = 600;
+      previewCanvas.classList.add('preview-canvas');
+      previewCanvas.style.pointerEvents = "none";
+      canvasContainer.appendChild(previewCanvas);
+
+      whiteboardContainer.appendChild(canvasContainer);
+
+      // Clear button
+      const clearButton = document.createElement('button');
+      clearButton.textContent = "Clear Whiteboard";
+      clearButton.classList.add('clear-button');
+      clearButton.onclick = function () {
+        clearWhiteboard(`whiteboard-${currentIndex}`);
+        drawingCanvas.undoStack = [];
+        localStorage.removeItem(drawingCanvas.id);
+      };
+      whiteboardContainer.appendChild(clearButton);
+
+      // Grid selector
+      const gridSelector = document.createElement('div');
+      gridSelector.classList.add('grid-selector');
+      const gridLabel = document.createElement('label');
+      gridLabel.setAttribute("for", `grid-select-${currentIndex}`);
+      gridLabel.textContent = "Grid:";
+      gridSelector.appendChild(gridLabel);
+
+      const gridSelect = document.createElement('select');
+      gridSelect.id = `grid-select-${currentIndex}`;
+      const gridOptions = [
+         { value: "none", label: "No Grid" },
+         { value: "10", label: "Small Grid (10px)" },
+         { value: "20", label: "Medium Grid (20px)" },
+         { value: "50", label: "Large Grid (50px)" }
+      ];
+      gridOptions.forEach(opt => {
+         const optionElem = document.createElement('option');
+         optionElem.value = opt.value;
+         optionElem.textContent = opt.label;
+         gridSelect.appendChild(optionElem);
+      });
+      gridSelector.appendChild(gridSelect);
+      whiteboardContainer.appendChild(gridSelector);
+
+      container.appendChild(whiteboardContainer);
+      quizSection.appendChild(container);
+
+      // Restore saved drawing if available
+      const savedDrawing = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (savedDrawing) {
+        const ctx = drawingCanvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedDrawing;
+      }
+
+      // Setup whiteboard drawing with preview for eraser
+      setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
+
+      // Update LaTeX rendering on answer input
+      inputBox.addEventListener('input', debounce(function () {
+        const latexOutputElement = document.getElementById(`answer-latex-${currentIndex}`);
+        latexOutputElement.innerHTML = `$$${inputBox.value}$$`;
+        MathJax.typeset();
+      }, 300));
+
+      inputBox.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') { checkAnswer(currentIndex); }
+      });
+
+      gridSelect.addEventListener('change', function() {
+         const value = gridSelect.value;
+         const gridCanvasId = `grid-${currentIndex}`;
+         if (value === "none") {
+            clearGrid(gridCanvasId);
+         } else {
+            drawGrid(gridCanvasId, parseInt(value));
+         }
+      });
+
+      questions.push({ answers: correctAnswersList, answered: false, attempts: 0 });
+      updateQuestionNumbers();
+    }
+
+    // Setup whiteboard drawing with eraser preview support
+    function setupWhiteboard(canvasId, previewCanvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const previewCanvas = document.getElementById(previewCanvasId);
+      const previewCtx = previewCanvas.getContext("2d");
+      let drawing = false;
+      let startX, startY;
+      let savedImageData = null;
+
+      if (!canvas.undoStack) { canvas.undoStack = []; }
+
+      function startDrawing(x, y) {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        if (canvas.dataset.tool === "eraser") {
+          ctx.strokeStyle = "white";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) * 2 : 10;
+        } else {
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+        }
+      }
+
+      function draw(x, y) {
+        if (!drawing) return;
+        if (canvas.dataset.tool !== "line") {
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+      }
+
+      function finalizeStroke() {
+        canvas.undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        localStorage.setItem(canvas.id, canvas.toDataURL());
+      }
+
+      function stopDrawing(x, y) {
+        if (!drawing) return;
+        if (canvas.dataset.tool === "line") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(savedImageData, 0, 0);
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+          ctx.stroke();
+          drawing = false;
+          savedImageData = null;
+          finalizeStroke();
+        } else {
+          drawing = false;
+          finalizeStroke();
+        }
+      }
+
+      canvas.addEventListener("mousedown", (e) => {
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        if (canvas.dataset.tool === "line") {
+          startX = e.offsetX;
+          startY = e.offsetY;
+          drawing = true;
+          savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        } else {
+          startDrawing(e.offsetX, e.offsetY);
+        }
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (canvas.dataset.tool === "eraser" && !drawing) {
+          previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+          previewCtx.beginPath();
+          const eraserSize = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) * 2 : 10;
+          previewCtx.arc(e.offsetX, e.offsetY, eraserSize / 2, 0, 2 * Math.PI);
+          previewCtx.setLineDash([5, 3]);
+          previewCtx.strokeStyle = "gray";
+          previewCtx.stroke();
+          return;
+        } else {
+          previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        }
+        if (!drawing) return;
+        if (canvas.dataset.tool === "line") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(savedImageData, 0, 0);
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(e.offsetX, e.offsetY);
+          ctx.strokeStyle = canvas.dataset.color || "black";
+          ctx.lineWidth = canvas.dataset.pencilSize ? parseInt(canvas.dataset.pencilSize) : 2;
+          ctx.stroke();
+        } else {
+          draw(e.offsetX, e.offsetY);
+        }
+      });
+
+      canvas.addEventListener("mouseup", (e) => {
+        if (canvas.dataset.tool === "line") {
+          stopDrawing(e.offsetX, e.offsetY);
+        } else {
+          drawing = false;
+          finalizeStroke();
+        }
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      });
+
+      canvas.addEventListener("mouseleave", (e) => {
+        if (drawing && canvas.dataset.tool === "line") {
+          stopDrawing(e.offsetX, e.offsetY);
+        } else {
+          drawing = false;
+        }
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      });
+
+      ctx.lineCap = "round";
+    }
+
+    function clearWhiteboard(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function stripLatex(latex) {
+      return latex.replace(/\s+/g, '').replace(/\\left|\\right/g, '');
+    }
+
+    function checkAnswer(questionIndex) {
+      const inputBox = document.getElementById(`answer-box-${questionIndex}`);
+      const feedbackElement = document.getElementById(`feedback-${questionIndex}`);
+      const attemptCounter = document.getElementById(`attempt-counter-${questionIndex}`);
+      const studentAnswer = stripLatex(inputBox.value.trim());
+      const possibleAnswers = questions[questionIndex].answers.map(answer => stripLatex(answer.toString().trim()));
+
+      if (!questions[questionIndex].answered) {
+        questions[questionIndex].attempts += 1;
+        attemptCounter.textContent = `Attempts: ${questions[questionIndex].attempts}`;
+
+        if (possibleAnswers.includes(studentAnswer)) {
+          feedbackElement.textContent = "Correct!";
+          feedbackElement.className = "feedback correct";
+          questions[questionIndex].answered = true;
+          correctAnswers++;
+        } else if (questions[questionIndex].attempts >= 3) {
+          const correctAnswersList = questions[questionIndex].answers;
+          let answerString = correctAnswersList.length > 1 ? 
+                             correctAnswersList.join(" \\text{ or } ") : 
+                             correctAnswersList[0];
+          feedbackElement.innerHTML = `Incorrect. The correct answer is: $$${answerString}$$`;
+          feedbackElement.className = "feedback incorrect";
+          MathJax.typeset();
+          questions[questionIndex].answered = true;
+        } else {
+          feedbackElement.textContent = "Incorrect, try again.";
+          feedbackElement.className = "feedback incorrect";
+        }
+      }
+      updateScore();
+    }
+
+    function updateScore() {
+      correctScoreElement.textContent = correctAnswers;
+      totalQuestionsElement.textContent = questions.length;
+      const percentage = ((correctAnswers / questions.length) * 100).toFixed(2);
+      percentageScoreElement.textContent = `${percentage}%`;
+    }
+
+    function updateQuestionNumbers() {
+      totalQuestionsElement.textContent = questions.length;
+    }
+
+    // Sample questions
+    createQuestion("5 + (-3) - (-7) - 2", ["7"]);
+createQuestion("-4 - (-9) + (-12) - (-5)", ["-2"]);
+createQuestion("15 - (-6) + (-8) - (-3) - 10", ["6"]);
+createQuestion("-2 + (-9) - (-7) + (-4)", ["-8"]);
+createQuestion("8 - (-3) + (-6) + (-5) - 1 + (-2)", ["-3"]);
+createQuestion("-7 + (-5) - (-4) - 8 + (-10)", ["-26"]);
+createQuestion("13 - (-6) + (-3) - (-7) + (-2) + 9", ["30"]);
+createQuestion("11 + (-4) - (-2) + 6 - (-8) + (-1)", ["22"]);
+createQuestion("-5 + (-7) + (-2) - (-9) + (-3) + (-4)", ["-12"]);
+createQuestion("6 + (-8) + (-12) - (-4) + (-5) - 3 + 1", ["-17"]);
+createQuestion("-9 + 10 + (-2) - (-7) + (-8) + (-6)", ["-8"]);
+createQuestion("14 - (-5) + (-9) + 3 - (-4) + (-6) + (-1)", ["10"]);
+createQuestion("-6 + (-4) - (-5) + 7 + (-3) + (-8)", ["-9"]);
+createQuestion("9 + (-7) + (-5) - (-10) + (-6) + (-4)", ["-3"]);
+createQuestion("-3 + (-8) - (-6) + (-2) + (-5) + (-7)", ["-19"]);
+createQuestion("10 + (-6) + (-4) - (-8) + (-3) + (-2)", ["3"]);
+createQuestion("-4 + (-7) - (-9) + (-12) - (-6) + (-5) - 2", ["-15"]);
+createQuestion("8 + (-5) - (-7) + (-6) + (-3) - (-4) + (-1)", ["4"]);
+createQuestion("13 - (-6) + (-5) - (-8) + (-7) + (-9) + (-4)", ["2"]);
+createQuestion("-2 + (-9) - (-5) + (-8) + (-6) + 3 - (-4)", ["-13"]);
+
+
+    window.onload = function () {
+      MathJax.typeset();
+    };
+  </script>
+</body>
+</html>
