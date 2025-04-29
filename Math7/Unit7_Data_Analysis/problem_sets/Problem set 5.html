@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Quiz with Floating Whiteboard Tools</title>
+  
+  <!-- MathJax for LaTeX -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async 
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <link rel="stylesheet" href="../../../css/math7problemset.css" />
+
+  <style>
+    /* Make the toolbar fixed and style it */
+    #floating-toolbar {
+      position: fixed;
+      top: 500px;
+      right: 10px;
+      z-index: 1000;
+      padding: 10px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: move; /* Indicate that the element is draggable */
+    }
+  </style>
+</head>
+<body>
+  <!-- Help Box -->
+  <div id="help-box">
+    <button id="help-box-toggle">Minimize</button>
+    <h3>How to Type</h3>
+    <p><strong>Fractions:</strong> <code>\\frac{numerator}{denominator}</code></p>
+    <p><strong>Exponents:</strong> <code>x^{2}</code> or <code>(xy)^{3}</code></p>
+    <p><strong>Square Roots:</strong> <code>\\sqrt{radicand}</code></p>
+    <p><strong>NthRoots:</strong> <code>\\sqrt[index]{radicand}</code></p>
+    <p><strong>Multiplication:</strong> <code>\\cdot</code></p>
+    <p><strong>Repeating:</strong> <code>\\overline{number}</code></p>
+    <p><strong>Less than or equal to:</strong> <code>\\leq</code></p>
+    <p><strong>Greater than or equal to:</strong> <code>\\geq</code></p>
+  </div>
+
+  <!-- Floating Toolbar -->
+  <div id="floating-toolbar">
+    <button class="tool-button" data-tool="pencil" data-color="black" 
+      style="background-color: black; color: white;">Black</button>
+    <button class="tool-button" data-tool="pencil" data-color="red" 
+      style="background-color: red; color: white;">Red</button>
+    <button class="tool-button" data-tool="pencil" data-color="blue" 
+      style="background-color: blue; color: white;">Blue</button>
+    <button class="tool-button" data-tool="pencil" data-color="green" 
+      style="background-color: green; color: white;">Green</button>
+    <button class="tool-button" data-tool="eraser">Eraser Tool</button>
+    <button class="tool-button" data-tool="line">Line Tool</button>
+    <label for="pencil-size">Pencil and Eraser Size:</label>
+    <input type="range" id="pencil-size" min="1" max="20" value="2">
+    <button class="tool-button" id="undo-btn">Undo</button>
+  </div>
+
+  <!-- Banner -->
+  <div id="banner">
+    <h2>MATH 7</h2>
+    <a class="cta-button" href="../Unit7_data_analysis.html">Back</a>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quiz-section">
+    <!-- Questions will be added dynamically here -->
+  </div>
+
+  <!-- Score Section -->
+  <div id="score-section">
+    <p>Correct Answers: <span class="score" id="correct-score">0</span>/<span id="total-questions">0</span></p>
+    <p>Percentage: <span class="score" id="percentage-score">0%</span></p>
+  </div>
+
+  <script>
+    // Draggable Floating Toolbar Code
+    (function() {
+      const toolbar = document.getElementById('floating-toolbar');
+      let offsetX = 0, offsetY = 0;
+      let isDragging = false;
+
+      toolbar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - toolbar.offsetLeft;
+        offsetY = e.clientY - toolbar.offsetTop;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          toolbar.style.left = (e.clientX - offsetX) + 'px';
+          toolbar.style.top = (e.clientY - offsetY) + 'px';
+          toolbar.style.right = 'auto';
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+    })();
+
+    // Help Box Toggle
+    const helpBox = document.getElementById('help-box');
+    const toggleButton = document.getElementById('help-box-toggle');
+    toggleButton.addEventListener('click', () => {
+      helpBox.classList.toggle('minimized');
+      toggleButton.textContent = helpBox.classList.contains('minimized') ? 'Maximize' : 'Minimize';
+    });
+
+    const quizSection = document.getElementById('quiz-section');
+    const correctScoreElement = document.getElementById('correct-score');
+    const totalQuestionsElement = document.getElementById('total-questions');
+    const percentageScoreElement = document.getElementById('percentage-score');
+    let correctAnswers = 0;
+    let questionIndex = 0;
+    let questions = [];
+
+    // Global active canvas variable for the floating toolbar
+    let activeCanvas = null;
+
+    document.addEventListener('click', (e) => {
+      if (e.target.tagName === 'CANVAS' && e.target.classList.contains('drawing-canvas')) {
+        activeCanvas = e.target;
+      }
+    });
+
+    document.querySelectorAll('#floating-toolbar .tool-button').forEach(button => {
+      button.addEventListener('click', () => {
+        if (button.id !== 'undo-btn') {
+          document.querySelectorAll('#floating-toolbar .tool-button').forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+        }
+        if (!activeCanvas) {
+          alert('Please click on a whiteboard to activate it.');
+          return;
+        }
+        const tool = button.getAttribute('data-tool');
+        if (tool) {
+          activeCanvas.dataset.tool = tool;
+          const color = button.getAttribute('data-color');
+          if (color) activeCanvas.dataset.color = color;
+        }
+        if (button.id === 'undo-btn') undoAction(activeCanvas);
+      });
+    });
+
+    document.getElementById('pencil-size').addEventListener('input', (e) => {
+      if (activeCanvas) activeCanvas.dataset.pencilSize = e.target.value;
+    });
+
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => { func.apply(this, args); }, delay);
+      };
+    }
+
+    function drawGrid(canvasId, gridSize) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+    }
+
+    function clearGrid(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function undoAction(canvas) {
+      if (!canvas.undoStack || canvas.undoStack.length === 0) return;
+      canvas.undoStack.pop();
+      const ctx = canvas.getContext("2d");
+      if (canvas.undoStack.length > 0) {
+        ctx.putImageData(canvas.undoStack[canvas.undoStack.length - 1], 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      localStorage.setItem(canvas.id, canvas.toDataURL());
+    }
+
+    // Create a new question with a whiteboard (no individual toolbar)
+    //   questionText: the HTML/LaTeX question
+    //   correctAnswersList: array of correct-answer strings
+    //   bgImagePath: OPTIONAL relative path to a background image
+    function createQuestion(questionText, correctAnswersList, bgImagePath = null) {
+      let currentIndex = questionIndex++;
+      const container = document.createElement('div');
+      container.classList.add('question-container');
+      container.id = `question${currentIndex}`;
+
+      // Question content
+      const questionContent = document.createElement('div');
+      questionContent.classList.add('question-content');
+      const questionElem = document.createElement('div');
+      questionElem.classList.add('question');
+      questionElem.innerHTML = `<span class="question-number">${currentIndex + 1}.</span> ${questionText}`;
+      questionContent.appendChild(questionElem);
+      const inputBox = document.createElement('input');
+      inputBox.type = 'text'; inputBox.classList.add('answer-box'); inputBox.id = `answer-box-${currentIndex}`;
+      inputBox.placeholder = "Your answer"; questionContent.appendChild(inputBox);
+      const latexOutput = document.createElement('div');
+      latexOutput.classList.add('answer-latex'); latexOutput.id = `answer-latex-${currentIndex}`;
+      questionContent.appendChild(latexOutput);
+      const submitButton = document.createElement('button');
+      submitButton.classList.add('submit-button'); submitButton.textContent = "Submit";
+      submitButton.onclick = () => checkAnswer(currentIndex);
+      questionContent.appendChild(submitButton);
+      const feedback = document.createElement('div'); feedback.classList.add('feedback'); feedback.id = `feedback-${currentIndex}`;
+      questionContent.appendChild(feedback);
+      const attemptCounter = document.createElement('div'); attemptCounter.classList.add('attempt-counter');
+      attemptCounter.id = `attempt-counter-${currentIndex}`; attemptCounter.textContent = `Attempts: 0`;
+      questionContent.appendChild(attemptCounter);
+      container.appendChild(questionContent);
+
+      // Whiteboard setup
+      const whiteboardContainer = document.createElement('div'); whiteboardContainer.classList.add('whiteboard-container');
+      const canvasContainer = document.createElement('div'); canvasContainer.classList.add('canvas-container');
+
+      // Grid canvas
+      const grid_canvas = document.createElement('canvas');
+      grid_canvas.id = `grid-${currentIndex}`; grid_canvas.width = 900; grid_canvas.height = 600;
+      grid_canvas.classList.add('grid-canvas');
+      grid_canvas.style.pointerEvents = 'none';
+      if (bgImagePath) {
+        grid_canvas.style.backgroundImage = `url('${bgImagePath}')`;
+        grid_canvas.style.backgroundSize = 'contain';
+        grid_canvas.style.backgroundPosition = 'center';
+        grid_canvas.style.backgroundRepeat = 'no-repeat';
+      }
+      canvasContainer.appendChild(grid_canvas);
+
+      // Drawing canvas
+      const drawing_canvas = document.createElement('canvas');
+      drawing_canvas.id = `whiteboard-${currentIndex}`; drawing_canvas.width = 900; drawing_canvas.height = 600;
+      drawing_canvas.classList.add('drawing-canvas'); drawing_canvas.undoStack = [];
+      drawing_canvas.dataset.tool = 'pencil'; drawing_canvas.dataset.color = 'black'; drawing_canvas.dataset.pencilSize = '2';
+      canvasContainer.appendChild(drawing_canvas);
+
+      // Preview canvas for eraser
+      const preview_canvas = document.createElement('canvas');
+      preview_canvas.id = `preview-${currentIndex}`; preview_canvas.width = 900; preview_canvas.height = 600;
+      preview_canvas.classList.add('preview-canvas'); preview_canvas.style.pointerEvents = 'none';
+      canvasContainer.appendChild(preview_canvas);
+
+      whiteboardContainer.appendChild(canvasContainer);
+      // Clear button
+      const clear_btn = document.createElement('button'); clear_btn.textContent = 'Clear Whiteboard';
+      clear_btn.classList.add('clear-button');
+      clear_btn.onclick = () => { clearWhiteboard(`whiteboard-${currentIndex}`); drawing_canvas.undoStack = []; localStorage.removeItem(drawing_canvas.id); };
+      whiteboardContainer.appendChild(clear_btn);
+
+      // Grid selector
+      const grid_selector = document.createElement('div'); grid_selector.classList.add('grid-selector');
+      const grid_label = document.createElement('label'); grid_label.setAttribute('for', `grid-select-${currentIndex}`);
+      grid_label.textContent = 'Grid:'; grid_selector.appendChild(grid_label);
+      const grid_select = document.createElement('select'); grid_select.id = `grid-select-${currentIndex}`;
+      [ {value:'none', label:'No Grid'}, {value:'10', label:'Small Grid (10px)'}, {value:'20', label:'Medium Grid (20px)'}, {value:'50', label:'Large Grid (50px)'} ]
+      .forEach(o => { const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.label; grid_select.appendChild(opt); });
+      grid_selector.appendChild(grid_select);
+      whiteboardContainer.appendChild(grid_selector);
+
+      container.appendChild(whiteboardContainer);
+      quizSection.appendChild(container);
+
+      // Restore saved drawing
+      const saved = localStorage.getItem(`whiteboard-${currentIndex}`);
+      if (saved) {
+        const ctx2 = drawing_canvas.getContext('2d'); const img2=new Image(); img2.onload=()=>ctx2.drawImage(img2,0,0); img2.src=saved;
+      }
+      setupWhiteboard(`whiteboard-${currentIndex}`, `preview-${currentIndex}`);
+
+      inputBox.addEventListener('input', debounce(()=>{ document.getElementById(`answer-latex-${currentIndex}`).innerHTML=`$$${inputBox.value}$$`; MathJax.typeset(); },300));
+      inputBox.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(currentIndex); });
+      grid_select.addEventListener('change', ()=>{ if(grid_select.value==='none') clearGrid(`grid-${currentIndex}`); else drawGrid(`grid-${currentIndex}`,parseInt(grid_select.value)); });
+      questions.push({answers:correctAnswersList,answered:false,attempts:0}); updateQuestionNumbers();
+    }
+
+    // Setup whiteboard drawing with eraser preview support
+    function setupWhiteboard(canvasId, previewId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const preview = document.getElementById(previewId);
+      const pctx = preview.getContext('2d');
+      let drawing=false, startX, startY, savedData;
+      if(!canvas.undoStack) canvas.undoStack=[];
+      function start(x,y){ drawing=true; ctx.beginPath(); ctx.moveTo(x,y);
+        if(canvas.dataset.tool==='eraser'){ ctx.strokeStyle='white'; ctx.lineWidth=(parseInt(canvas.dataset.pencilSize)||2)*2; }
+        else { ctx.strokeStyle=canvas.dataset.color||'black'; ctx.lineWidth=parseInt(canvas.dataset.pencilSize)||2; }
+      }
+      function draw(x,y){ if(!drawing)return; if(canvas.dataset.tool!=='line'){ ctx.lineTo(x,y); ctx.stroke(); }}
+      function stop(x,y){ if(canvas.dataset.tool==='line'){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.putImageData(savedData,0,0); ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(x,y); ctx.stroke(); } drawing=false; ctx && canvas.undoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height)); localStorage.setItem(canvas.id,canvas.toDataURL()); }
+      canvas.addEventListener('mousedown',e=>{ pctx.clearRect(0,0,preview.width,preview.height); if(canvas.dataset.tool==='line'){ startX=e.offsetX; startY=e.offsetY; drawing=true; savedData=ctx.getImageData(0,0,canvas.width,canvas.height);} else start(e.offsetX,e.offsetY); });
+      canvas.addEventListener('mousemove',e=>{ if(canvas.dataset.tool==='eraser'&&!drawing){ pctx.clearRect(0,0,preview.width,preview.height); pctx.beginPath(); pctx.arc(e.offsetX,e.offsetY,(parseInt(canvas.dataset.pencilSize)||2)*1,0,2*Math.PI); pctx.setLineDash([5,3]); pctx.stroke(); return;} pctx.clearRect(0,0,preview.width,preview.height); if(!drawing)return; if(canvas.dataset.tool==='line'){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.putImageData(savedData,0,0); ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke(); } else draw(e.offsetX,e.offsetY); });
+      canvas.addEventListener('mouseup',e=>stop(e.offsetX,e.offsetY));
+      canvas.addEventListener('mouseleave',e=>{ if(drawing&&canvas.dataset.tool==='line')stop(e.offsetX,e.offsetY); else drawing=false;pctx.clearRect(0,0,preview.width,preview.height); });
+      ctx.lineCap='round';
+    }
+
+    function clearWhiteboard(id){ const c=document.getElementById(id); c.getContext('2d').clearRect(0,0,c.width,c.height); }
+    function stripLatex(l){ return l.replace(/\s+/g,'').replace(/\\left|\\right/g,''); }
+
+    function checkAnswer(idx){ const ib=document.getElementById(`answer-box-${idx}`);
+      const fb=document.getElementById(`feedback-${idx}`);
+      const at=document.getElementById(`attempt-counter-${idx}`);
+      const ans=stripLatex(ib.value.trim()); const pts=questions[idx].answers.map(a=>stripLatex(a));
+      if(!questions[idx].answered){ questions[idx].attempts++; at.textContent=`Attempts: ${questions[idx].attempts}`;
+        if(pts.includes(ans)){ fb.textContent='Correct!'; fb.className='feedback correct'; questions[idx].answered=true; correctAnswers++; }
+        else if(questions[idx].attempts>=3){ const ca=questions[idx].answers; const s=ca.length>1?ca.join(' \\text{ or } '):ca[0]; fb.innerHTML=`Incorrect. The correct answer is: $$${s}$$`; fb.className='feedback incorrect'; MathJax.typeset(); questions[idx].answered=true; }
+        else{ fb.textContent='Incorrect, try again.'; fb.className='feedback incorrect'; }
+        updateScore(); }
+    }
+
+    function updateScore(){ document.getElementById('correct-score').textContent=correctAnswers; document.getElementById('total-questions').textContent=questions.length; document.getElementById('percentage-score').textContent=`${((correctAnswers/questions.length)*100).toFixed(2)}%`; }
+    function updateQuestionNumbers(){ document.getElementById('total-questions').textContent=questions.length; }
+
+    // Sample questions
+    createQuestion("A fair 10-sided die (faces 1–10) is rolled and a fair 4-section spinner (Red, Blue, Green, Yellow) is spun. Calculate the probability that the die shows a multiple of 5 \\( \\text{and} \\) the spinner lands on Green.", ["1/20"]);
+
+createQuestion("A fair coin is flipped and then a fair 8-sided die (faces 1–8) is rolled. Calculate the probability of getting Tails \\( \\text{or} \\) rolling an even number.", ["3/4"]);
+
+createQuestion("Two fair coins are each flipped once. Calculate the probability of obtaining at least one Head.", ["3/4"]);
+
+createQuestion("A card is drawn from a standard 52-card deck and a fair 6-sided die is rolled. Calculate the probability of drawing a Heart \\( \\text{and} \\) rolling a 3.", ["1/78"]);
+
+createQuestion("A marble is drawn from Urn A (3 red, 4 blue) with replacement, then from Urn B (2 red, 2 green) with replacement. Calculate the probability of drawing a red marble from Urn A \\( \\text{and} \\) a green marble from Urn B.", ["3/14"]);
+
+createQuestion("A fair 6-sided die is rolled and then a fair spinner with sections numbered 1–5 is spun. Calculate the probability that the die shows a number >4 \\( \\text{or} \\) the spinner shows a prime number.", ["17/30"]);
+
+createQuestion("Flip a fair coin three times. Calculate the probability of getting Heads on the first flip \\( \\text{and} \\) Tails on the third flip.", ["1/4"]);
+
+createQuestion("A fair 6-sided die is rolled twice (independent rolls). Calculate the probability that the first roll is even \\( \\text{and} \\) the second roll is at least 5.", ["1/6"]);
+
+createQuestion("A fair spinner with 6 equal sectors numbered 1–6 is spun and a fair 6-sided die is rolled. Calculate the probability that the spinner lands on an even number \\( \\text{and} \\) the die shows an odd number.", ["1/4"]);
+
+createQuestion("A card is drawn from a standard deck and then a fair coin is flipped. Calculate the probability of drawing a King \\( \\text{or} \\) flipping Heads.", ["29/104"]);
+
+
+
+    // Example with background image (uncomment to use):
+    // createQuestion("Example with graph paper background:", ["answer"], "../images/graph-paper.png");
+
+    window.onload = () => MathJax.typeset();
+  </script>
+</body>
+</html>
